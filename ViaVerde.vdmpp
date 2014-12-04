@@ -1,0 +1,70 @@
+class ViaVerde
+
+  types
+    public Car::licensePlate:token
+    						carClass:CarClass
+    						brand:Brand
+    						model:token
+    						owner:token
+    						viaVerdeDevice:ViaVerdeDevice;
+    						
+    public CarClass = <a> | <b> | <c> | <d>;
+    
+    public Brand = <Mercedes> | <Audi> | <KIA> | <Hyundai> | <BMW> | <Mitsubishi>;
+    
+    public ViaVerdeDevice::id:token
+    												creditCard:token
+    												record:seq of ViaVerdeRecord;
+
+    public ViaVerdeRecord::record:OneTimeRecord | ParkingRecord | HighwayRecord
+    											 cost: real;
+    												
+    public HighwayRecord::entryKm: real
+    											exitKm: real
+    											highway: token;
+    											
+    public ParkingRecord::entryTime: real
+    											exitTime: real
+    											park: token;
+    								
+    public OneTimeRecord = OneTime;
+    
+    public OneTime::type: <GasStation> | <SCUT>
+    								time: real;
+    
+    public Highway::costPerClass: inmap CarClass to real
+    								costPerTollbooth: inmap Tollbooth to real
+    								name: token;
+    															
+    public Park::costPerHour: real
+    						 name: token;
+    						 
+    public Direction = <Forward> | <Backward>;
+    						     												
+    public Tollbooth::km: real
+    									direction: Direction;
+    
+  instance variables
+  	public highways: seq of Highway;
+  	public parks: seq of Park;
+  	public cars: seq of Car;
+  	
+  operations
+	  public goThroughHighway(car: Car, entryKm: real, exitKm: real, direction: Direction, highway: Highway) == (
+	  	return;
+	  );
+	  
+	  public goThroughPark(car: Car, entryTime: real, exitTime: real, park: Park) == (
+	  	return;
+	  );
+	  
+	  public goThroughOneTime(car: Car, cost: real, oneTime: OneTime, time: real) == (
+	  	return;
+	  );
+  
+  	public setCreditCard(car: Car, creditCard: token) == (
+  	)
+  functions
+  
+end ViaVerde
+  
