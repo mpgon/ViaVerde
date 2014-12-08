@@ -1,7 +1,7 @@
 class ViaVerde
   types
-  	public String = seq of char;
-  	
+  	public String = seq1 of char;
+  	  	
     public Car::licensePlate:String
     						carClass:CarClass
     						brandModel:BrandModel;
@@ -13,7 +13,7 @@ class ViaVerde
     
     public ViaVerdeDevice::id:String
     												creditCard:String
-    												record:seq of ViaVerdeRecord;
+    												records:seq of ViaVerdeRecord;
 
     public ViaVerdeRecord::record:OneTimeRecord | ParkingRecord | HighwayRecord
     											 cost: real;
@@ -29,15 +29,11 @@ class ViaVerde
     public OneTimeRecord = OneTime;
     
     public OneTime::type: <GasStation> | <SCUT>
-    								time: real;
+    								cost: real;
     
     public Highway::costPerClass: inmap CarClass to real
-    								costPerTollbooth: inmap Tollbooth to real
-    								name: String;
-    															
-    public Park::costPerHour: real
-    						 name: String;
-    						 
+    								costPerTollbooth: inmap Tollbooth to real;
+    															    						 
     public Direction = <Forward> | <Backward>;
     						     												
     public Tollbooth::km: real
@@ -45,40 +41,62 @@ class ViaVerde
     													
     
   instance variables
-  	public highways: seq of Highway := [];
-  	public parks: seq of Park := [];
+  	public highways: inmap String to Highway := { |-> };
+  	
+  	--Park name -> Cost per hour
+  	public parks: inmap String to real := { |-> };
   	public registeredCars: inmap Car to ViaVerdeDevice := { |-> };
   	
+  	--All cost, distance and time units >= 0
+  	inv forall highway in set rng highways &
+  				forall cpc in set rng highway.costPerClass,
+  				cpt in set rng highway.costPerTollbooth & cpc >= 0 and cpt >= 0;
   	
+  	inv forall costPerHour in set rng parks & costPerHour >= 0;
+  	
+  	inv forall device in set rng registeredCars &
+  				forall record in set elems device.records &
+  						record.cost >= 0 and
+  						( is_HighwayRecord(record.record) =>
+  								record.record.entryKm >= 0 and record.record.entryKm >= 0 ) and
+  						( is_OneTimeRecord(record.record) =>
+  								record.record.time >= 0 ) and
+  						( is_ParkingRecord(record.record) =>
+  								record.record.entryTime >= 0 and record.record.exitTime >= 0 );
+  	  	
   operations
 	  public ViaVerde: () ==> ViaVerde
 			ViaVerde() == 
 				return self;
 			
-	  public goThroughHighway(car: Car, entryKm: real, exitKm: real, direction: Direction, highway: Highway,
-	  												device: ViaVerdeDevice) == (
+	  public goThroughHighway(car: Car, entryKm: real, exitKm: real, direction: Direction, highwayName: String,
+	  												deviceId: String) == (
 	  	return;
-	  );
+	  )
+	  pre car in set dom registeredCars;
 	  
-	  public goThroughPark(car: Car, entryTime: real, exitTime: real, park: Park) == (
+	  public goThroughPark(car: Car, entryTime: real, exitTime: real, parkName: String) == (
 	  	return;
-	  );
+	  )
+	  pre car in set dom registeredCars;
 	  
 	  public goThroughOneTime(car: Car, cost: real, oneTime: OneTime, time: real) == (
 	  	return;
-	  );
+	  )
+	  pre car in set dom registeredCars;
   
   	public setCreditCard(car: Car, creditCard: String) == 
   		registeredCars(car).creditCard := creditCard
    	pre car in set dom registeredCars;
   	
   	public setDevice(car: Car, device: ViaVerdeDevice) == 
-  		registeredCars := registeredCars ++ {car |-> device}
-  	pre len device.record = 0;
+  		registeredCars := registeredCars ++ {car |-> device};
   	
   functions
   	public retrieveVehicleLocation(licensePlate: String) res: <NotFound> | String*real*real ==
   		<NotFound>;
+  		
+  		
   		
 end ViaVerde
   
