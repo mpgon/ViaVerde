@@ -20,6 +20,7 @@ class ViaVerde
     												
     public HighwayRecord::entryKm: real
     											exitKm: real
+    											direction: Direction
     											highway: String;
     											
     public ParkingRecord::entryTime: real
@@ -42,28 +43,33 @@ class ViaVerde
     
   instance variables
   	public highways: inmap String to Highway := { |-> };
-  	
   	--Park name -> Cost per hour
-  	public parks: inmap String to real := { |-> };
+  	public parks: inmap String to real := { |-> };   					
   	public registeredCars: inmap Car to ViaVerdeDevice := { |-> };
+  	public unRegisteredCarsRecords: map Car to ViaVerdeRecord := { |-> };
   	
   	--All cost, distance and time units >= 0
+  	--Entry time/KM < Exit time/KM
   	inv forall highway in set rng highways &
   				forall cpc in set rng highway.costPerClass,
   				cpt in set rng highway.costPerTollbooth & cpc >= 0 and cpt >= 0;
-  	
+  				
   	inv forall costPerHour in set rng parks & costPerHour >= 0;
-  	
-  	inv forall device in set rng registeredCars &
-  				forall record in set elems device.records &
-  						record.cost >= 0 and
-  						( is_HighwayRecord(record.record) =>
-  								record.record.entryKm >= 0 and record.record.entryKm >= 0 ) and
-  						( is_OneTimeRecord(record.record) =>
-  								record.record.time >= 0 ) and
-  						( is_ParkingRecord(record.record) =>
-  								record.record.entryTime >= 0 and record.record.exitTime >= 0 );
   	  	
+  	inv forall device in set rng registeredCars &
+  				forall vv_record in set elems device.records &
+  						validRecordCost(vv_record) and
+  						validRecordKm(vv_record) and
+  						consistentRecordKm(vv_record, rng highways);
+  								
+  	inv forall vv_record in set rng unRegisteredCarsRecords &
+					validRecordCost(vv_record) and
+					validRecordKm(vv_record) and
+					consistentRecordKm(vv_record, rng highways);
+  				
+    --A car is either registered or unregistered
+    inv dom registeredCars inter dom unRegisteredCarsRecords = {};
+    
   operations
 	  public ViaVerde: () ==> ViaVerde
 			ViaVerde() == 
@@ -89,15 +95,39 @@ class ViaVerde
   		registeredCars(car).creditCard := creditCard
    	pre car in set dom registeredCars;
   	
+  	--TODO: support unRegisteredCarsRecords -> registeredCars transition
   	public setDevice(car: Car, device: ViaVerdeDevice) == 
   		registeredCars := registeredCars ++ {car |-> device};
   	
   functions
   	public retrieveVehicleLocation(licensePlate: String) res: <NotFound> | String*real*real ==
   		<NotFound>;
-  		
-  		
-  		
+  	
+  	--Positive costs	
+  	private validRecordCost(vv_record: ViaVerdeRecord) res: bool ==
+  			vv_record.cost >= 0 and
+  						( is_OneTimeRecord(vv_record.record) =>
+  								vv_record.record.cost >= 0 );
+  	
+  	--Positive distances, entry before exit							
+  	private validRecordKm(vv_record: ViaVerdeRecord) res: bool ==
+				( is_HighwayRecord(vv_record.record) =>
+	  					vv_record.record.entryKm >= 0 and vv_record.record.exitKm >= 0 and
+	  					vv_record.record.entryKm < vv_record.record.exitKm ) and
+	  		( is_ParkingRecord(vv_record.record) =>
+	  					vv_record.record.entryTime >= 0 and vv_record.record.exitTime >= 0 and
+	  					vv_record.record.entryTime < vv_record.record.exitTime );
+	  
+	  --Entry/exit km in records match existing tollbooths		
+	  private consistentRecordKm(vv_record: ViaVerdeRecord, highways: set of Highway) res: bool ==
+	  		is_HighwayRecord(vv_record.record) =>
+	  				exists highway in set highways &
+	  						( exists tollbooth in set dom highway.costPerTollbooth &
+	  								vv_record.record.exitKm = tollbooth.km and
+	  								vv_record.record.direction = tollbooth.direction ) and
+	  						( exists tollbooth in set dom highway.costPerTollbooth &
+	  								vv_record.record.entryKm = tollbooth.km and
+	  								vv_record.record.direction = tollbooth.direction )
 end ViaVerde
   
 /*
