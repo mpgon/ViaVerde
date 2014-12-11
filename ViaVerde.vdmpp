@@ -1,18 +1,19 @@
 class ViaVerde
+
   types
-  	public String = seq of char;
-  	
-    public Car::licensePlate:String
+    public Car::licensePlate:token
     						carClass:CarClass
-    						brandModel:BrandModel;
+    						brand:Brand
+    						model:token
+    						owner:token
+    						viaVerdeDevice:ViaVerdeDevice;
     						
     public CarClass = <a> | <b> | <c> | <d>;
     
-    public BrandModel = <Mercedes> * <Benz> | <Audi> * <A4> | <KIA> * <Leo> | <Hyundai> * <Coupe>
-    | <BMW> * <X3> | <Mitsubishi> * <Lancer>;
+    public Brand = <Mercedes> | <Audi> | <KIA> | <Hyundai> | <BMW> | <Mitsubishi>;
     
-    public ViaVerdeDevice::id:String
-    												creditCard:String
+    public ViaVerdeDevice::id:token
+    												creditCard:token
     												record:seq of ViaVerdeRecord;
 
     public ViaVerdeRecord::record:OneTimeRecord | ParkingRecord | HighwayRecord
@@ -20,73 +21,75 @@ class ViaVerde
     												
     public HighwayRecord::entryKm: real
     											exitKm: real
-    											highway: String;
+    											highway: token;
     											
     public ParkingRecord::entryTime: real
     											exitTime: real
-    											park: String;
+    											park: token;
     								
-    public OneTimeRecord = OneTime;
+    public OneTimeRecord::oneTime: OneTime
+    											time: real;
     
-    public OneTime::type: <GasStation> | <SCUT>
-    								time: real;
+    public OneTime = <GasStation> | <SCUT>;
     
     public Highway::costPerClass: inmap CarClass to real
     								costPerTollbooth: inmap Tollbooth to real
-    								name: String;
+    								name: token;
     															
     public Park::costPerHour: real
-    						 name: String;
+    						 name: token;
     						 
     public Direction = <Forward> | <Backward>;
     						     												
     public Tollbooth::km: real
     									direction: Direction;
-    													
     
   instance variables
-  	public highways: seq of Highway := [];
-  	public parks: seq of Park := [];
-  	public registeredCars: inmap Car to ViaVerdeDevice := { |-> };
-  	
+  	public highways: seq of Highway;
+  	public parks: seq of Park;
+  	public cars: seq of Car;
   	
   operations
-	  public ViaVerde: () ==> ViaVerde
-			ViaVerde() == 
-				return self;
-			
-	  public goThroughHighway(car: Car, entryKm: real, exitKm: real, direction: Direction, highway: Highway,
-	  												device: ViaVerdeDevice) == (
+	  public goThroughHighway(car: Car, entryKm: real, exitKm: real, direction: Direction, highway: Highway) == (	
+	  	dcl costKm: real := (entryKm-exitKm) * highway.costPerClass(car.carClass);
+	  	dcl costTollbooths: real := getTollboothsCost(entryKm, exitKm, direction, highway);
+	  	dcl cost: real := costKm + costTollbooths;
+	  	
+	  	dcl viarecord: ViaVerdeRecord := mk_ViaVerdeRecord(mk_HighwayRecord(entryKm, exitKm, highway.name), cost);
+	  	car.viaVerdeDevice.record := car.viaVerdeDevice.record ^ viarecord;
+	  	
 	  	return;
+	  );
+	  
+	  public getTollboothsCost(entryKm: real, exitKm: real, direction: Direction, highway: Highway) costTollbooths: real  == (
+	  	dcl cost: real := 0;
+   		for all p2 in set dom highway.costPerTollbooth do
+      	if p2.km > entryKm and p2.km < exitKm and p2.direction = direction then
+      		cost := cost+highway.costPerTollbooth(p2);
+      		
+     	return cost;	  	
 	  );
 	  
 	  public goThroughPark(car: Car, entryTime: real, exitTime: real, park: Park) == (
+	  	dcl cost: real := (entryTime-exitTime mod 60)*park.costPerHour;
+	  	
+	  	dcl viarecord: ViaVerdeRecord := mk_ViaVerdeRecord(mk_ParkingRecord(entryTime, exitTime, park.name), cost);
+	  	car.viaVerdeDevice.record := car.viaVerdeDevice.record ^ viarecord;
+	  	
 	  	return;
 	  );
 	  
-	  public goThroughOneTime(car: Car, cost: real, oneTime: OneTime, time: real) == (
+	  public goThroughOneTime(car: Car, cost: real, oneTime: OneTime, time: real) == (	  	
+	  	dcl viarecord: ViaVerdeRecord := mk_ViaVerdeRecord(mk_OneTimeRecord(oneTime, time), cost);
+	  	car.viaVerdeDevice.record := car.viaVerdeDevice.record ^ viarecord;
 	  	return;
 	  );
   
-  	public setCreditCard(car: Car, creditCard: String) == 
-  		registeredCars(car).creditCard := creditCard
-   	pre car in set dom registeredCars;
-  	
-  	public setDevice(car: Car, device: ViaVerdeDevice) == 
-  		registeredCars := registeredCars ++ {car |-> device}
-  	pre len device.record = 0;
-  	
+  	public setCreditCard(car: Car, creditCard: token) == (
+  		car.viaVerdeDevice.creditCard := creditCard;
+  		return;
+  	)
   functions
-  	public retrieveVehicleLocation(licensePlate: String) res: <NotFound> | String*real*real ==
-  		<NotFound>;
-  		
+  
 end ViaVerde
   
-/*
-Como usar:
-Configurar run com "console" nesta classe.
-
-Exemplo comandos:
-create vv := new ViaVerde()
-print vv.setDevice(mk_Car("12-45-AV", <a>, mk_(<Audi>, <A4>)), mk_ViaVerdeDevice("1", "1234687854", []))
-*/
