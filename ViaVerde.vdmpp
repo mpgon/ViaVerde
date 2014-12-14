@@ -48,7 +48,7 @@ class ViaVerde
   	--Park name -> Cost per hour
   	public parks: inmap String to real := { |-> };   					
   	public registeredCars: inmap Car to ViaVerdeDevice := { |-> };
-  	public unRegisteredCarsRecords: map Car to ViaVerdeRecord := { |-> };
+  	public unRegisteredCarsRecords: map Car to seq of ViaVerdeRecord := { |-> };
   	
   	--All cost, distance and time units >= 0
   	--Entry time/KM < Exit time/KM
@@ -64,26 +64,33 @@ class ViaVerde
   						validRecordKm(vv_record) and
   						consistentRecordKm(vv_record, rng highways);
   								
-  	inv forall vv_record in set rng unRegisteredCarsRecords &
-					validRecordCost(vv_record) and
-					validRecordKm(vv_record) and
-					consistentRecordKm(vv_record, rng highways);
+  	inv forall deviceSeq in set rng unRegisteredCarsRecords &
+		  		forall vv_record in set elems deviceSeq &
+						validRecordCost(vv_record) and
+						validRecordKm(vv_record) and
+						consistentRecordKm(vv_record, rng highways);
   				
     --A car is either registered or unregistered
     inv dom registeredCars inter dom unRegisteredCarsRecords = {};
     
-  operations
+  operations  
+	  public registerCar(car: Car, creditCard: String, id: String) == (
+	  	registeredCars := registeredCars munion { car |-> mk_ViaVerdeDevice(id, creditCard, unRegisteredCarsRecords(car))};
+	  		  	--unRegisteredCarsRecords := remove[Car](car, unRegisteredCarsRecords);	  
+	  	return;
+	  );
+	  
 	  public goThroughHighway(car: Car, entryKm: real, exitKm: real, direction: Direction, highway: Highway) == (	
-	  	dcl costKm: real := (entryKm-exitKm) * highway.costPerClass(car.carClass);
-	  	dcl cost: real := costKm;
+	  	dcl cost: real := (entryKm-exitKm) * highway.costPerClass(car.carClass);
 	  	
 	  	dcl viarecord: ViaVerdeRecord := mk_ViaVerdeRecord(mk_HighwayRecord(entryKm, exitKm, direction, highway.name), cost);
-	  	registeredCars(car).records := registeredCars(car).records ^ [viarecord];
-	  	
+	  	if(car in set dom registeredCars) then
+	  		registeredCars(car).records := registeredCars(car).records ^ [viarecord]
+	  	else 
+	  		unRegisteredCarsRecords(car) := unRegisteredCarsRecords(car) ^ [viarecord];
 	  	return;
 	  )
-	  pre car in set dom registeredCars and entryKm < exitKm;	  
-	  
+	  pre car in set (dom registeredCars) union (dom unRegisteredCarsRecords) and entryKm < exitKm;	  
 	  
 	  public goThroughPark(car: Car, entryTime: real, exitTime: real, park: String) == (
 	  	dcl cost: real := (entryTime-exitTime mod 60)*parks(park);
@@ -93,19 +100,20 @@ class ViaVerde
 	  	
 	  	return;
 	  )
-	  pre car in set dom registeredCars and entryTime < exitTime;
+	  pre car in set (dom registeredCars) union (dom unRegisteredCarsRecords) and entryTime < exitTime;
 	  
 	  public goThroughOneTime(car: Car, cost: real, oneTime: OneTime, time: real) == (	  	
 	  	dcl viarecord: ViaVerdeRecord := mk_ViaVerdeRecord(mk_OneTimeRecord(oneTime, time), cost);
 	  	registeredCars(car).records := registeredCars(car).records ^  [viarecord];
 	  	return;
 	  )
-	  pre car in set dom registeredCars;
+	  pre car in set (dom registeredCars) union (dom unRegisteredCarsRecords);
   
   	public setCreditCard(car: Car, creditCard: String) == (
   		registeredCars(car).creditCard := creditCard;
   		return;
   	)
+  	pre car in set dom registeredCars;
   functions  
   	public retrieveVehicleLocation(licensePlate: String) res: <NotFound> | String*real*real ==
   		<NotFound>;
@@ -115,6 +123,12 @@ class ViaVerde
   			vv_record.cost >= 0 and
   						( is_OneTimeRecord(vv_record.record) =>
   								vv_record.record.cost >= 0 );
+  								
+		public remove[@T](e: @T, s: seq of @T) res: seq of @T ==
+    	[s(i) | i in set inds s & s(i) <> e];
+    	
+    --public removeMap[@T](e: @T, s: map @T to seq of ViaVerdeRecord) res: map @T to seq of ViaVerdeRecord ==
+    --	[{ i |-> s(i)} | i in set dom s & s(i) <> e];
   	
   	--Positive distances, entry before exit							
   	private validRecordKm(vv_record: ViaVerdeRecord) res: bool ==
