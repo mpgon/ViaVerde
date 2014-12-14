@@ -6,9 +6,8 @@ class ViaVerde
     public Car::licensePlate:String
     						carClass:CarClass
     						brand:Brand
-    						model:token
-    						owner:token
-    						viaVerdeDevice:ViaVerdeDevice;
+    						model:String
+    						owner:String;
     						
     public CarClass = <a> | <b> | <c> | <d>;
     
@@ -28,7 +27,7 @@ class ViaVerde
     											
     public ParkingRecord::entryTime: real
     											exitTime: real
-    											park: token;
+    											park: String;
     								
     public OneTimeRecord::oneTime: OneTime
     											time: real;
@@ -37,10 +36,7 @@ class ViaVerde
     
     public Highway::costPerClass: inmap CarClass to real
     								costPerTollbooth: inmap Tollbooth to real
-    								name: token;
-    															
-    public Park::costPerHour: real
-    						 name: token;
+    								name: String;
     						 
     public Direction = <Forward> | <Backward>;
     						     												
@@ -79,47 +75,38 @@ class ViaVerde
   operations
 	  public goThroughHighway(car: Car, entryKm: real, exitKm: real, direction: Direction, highway: Highway) == (	
 	  	dcl costKm: real := (entryKm-exitKm) * highway.costPerClass(car.carClass);
-	  	dcl costTollbooths: real := getTollboothsCost(entryKm, exitKm, direction, highway);
-	  	dcl cost: real := costKm + costTollbooths;
+	  	dcl cost: real := costKm;
 	  	
-	  	dcl viarecord: ViaVerdeRecord := mk_ViaVerdeRecord(mk_HighwayRecord(entryKm, exitKm, highway.name), cost);
-	  	car.viaVerdeDevice.record := car.viaVerdeDevice.record ^ viarecord;
-	  	
-	  	return;
-	  )
-	  pre car in set dom registeredCars;
-	  
-	  public getTollboothsCost(entryKm: real, exitKm: real, direction: Direction, highway: Highway) costTollbooths: real  == (
-	  	dcl cost: real := 0;
-   		for all p2 in set dom highway.costPerTollbooth do
-      	if p2.km > entryKm and p2.km < exitKm and p2.direction = direction then
-      		cost := cost+highway.costPerTollbooth(p2);
-      		
-     	return cost;	  	
-	  );
-	  
-	  public goThroughPark(car: Car, entryTime: real, exitTime: real, park: Park) == (
-	  	dcl cost: real := (entryTime-exitTime mod 60)*park.costPerHour;
-	  	
-	  	dcl viarecord: ViaVerdeRecord := mk_ViaVerdeRecord(mk_ParkingRecord(entryTime, exitTime, park.name), cost);
-	  	car.viaVerdeDevice.record := car.viaVerdeDevice.record ^ viarecord;
+	  	dcl viarecord: ViaVerdeRecord := mk_ViaVerdeRecord(mk_HighwayRecord(entryKm, exitKm, direction, highway.name), cost);
+	  	registeredCars(car).records := registeredCars(car).records ^ [viarecord];
 	  	
 	  	return;
 	  )
-	  pre car in set dom registeredCars;
+	  pre car in set dom registeredCars and entryKm < exitKm;	  
+	  
+	  
+	  public goThroughPark(car: Car, entryTime: real, exitTime: real, park: String) == (
+	  	dcl cost: real := (entryTime-exitTime mod 60)*parks(park);
+	  	
+	  	dcl viarecord: ViaVerdeRecord := mk_ViaVerdeRecord(mk_ParkingRecord(entryTime, exitTime, park), cost);
+	  	registeredCars(car).records := registeredCars(car).records ^ [viarecord];
+	  	
+	  	return;
+	  )
+	  pre car in set dom registeredCars and entryTime < exitTime;
 	  
 	  public goThroughOneTime(car: Car, cost: real, oneTime: OneTime, time: real) == (	  	
 	  	dcl viarecord: ViaVerdeRecord := mk_ViaVerdeRecord(mk_OneTimeRecord(oneTime, time), cost);
-	  	car.viaVerdeDevice.record := car.viaVerdeDevice.record ^ viarecord;
+	  	registeredCars(car).records := registeredCars(car).records ^  [viarecord];
 	  	return;
 	  )
 	  pre car in set dom registeredCars;
   
-  	public setCreditCard(car: Car, creditCard: token) == (
-  		car.viaVerdeDevice.creditCard := creditCard;
+  	public setCreditCard(car: Car, creditCard: String) == (
+  		registeredCars(car).creditCard := creditCard;
   		return;
   	)
-  functions
+  functions  
   	public retrieveVehicleLocation(licensePlate: String) res: <NotFound> | String*real*real ==
   		<NotFound>;
   	
