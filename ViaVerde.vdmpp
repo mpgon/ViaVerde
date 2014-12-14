@@ -76,7 +76,7 @@ class ViaVerde
   operations  
 	  public registerCar(car: Car, creditCard: String, id: String) == (
 	  	registeredCars := registeredCars munion { car |-> mk_ViaVerdeDevice(id, creditCard, unRegisteredCarsRecords(car))};
-	  		  	--unRegisteredCarsRecords := remove[Car](car, unRegisteredCarsRecords);	  
+	  	unRegisteredCarsRecords := {car} <-: unRegisteredCarsRecords;
 	  	return;
 	  );
 	  
@@ -96,7 +96,10 @@ class ViaVerde
 	  	dcl cost: real := (entryTime-exitTime mod 60)*parks(park);
 	  	
 	  	dcl viarecord: ViaVerdeRecord := mk_ViaVerdeRecord(mk_ParkingRecord(entryTime, exitTime, park), cost);
-	  	registeredCars(car).records := registeredCars(car).records ^ [viarecord];
+	  	if(car in set dom registeredCars) then
+	  		registeredCars(car).records := registeredCars(car).records ^ [viarecord]
+	  	else 
+	  		unRegisteredCarsRecords(car) := unRegisteredCarsRecords(car) ^ [viarecord];
 	  	
 	  	return;
 	  )
@@ -104,8 +107,10 @@ class ViaVerde
 	  
 	  public goThroughOneTime(car: Car, cost: real, oneTime: OneTime, time: real) == (	  	
 	  	dcl viarecord: ViaVerdeRecord := mk_ViaVerdeRecord(mk_OneTimeRecord(oneTime, time), cost);
-	  	registeredCars(car).records := registeredCars(car).records ^  [viarecord];
-	  	return;
+	  	if(car in set dom registeredCars) then
+	  		registeredCars(car).records := registeredCars(car).records ^ [viarecord]
+	  	else 
+	  		unRegisteredCarsRecords(car) := unRegisteredCarsRecords(car) ^ [viarecord];	  	return;
 	  )
 	  pre car in set (dom registeredCars) union (dom unRegisteredCarsRecords);
   
