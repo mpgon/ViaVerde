@@ -19,11 +19,12 @@ class ViaVerde
     public ViaVerdeRecord::record:OneTimeRecord | ParkingRecord | HighwayRecord
     											 cost: real;
     												
-    public HighwayRecord::km: real
-    											time: real
+    public HighwayRecord::entryKm: real
+    											exitKm: real
+    											entryTime: real
+    											exitTime: real
     											direction: Direction
-    											highway: String
-    											entrance: bool;
+    											highway: String;
     											
     public ParkingRecord::entryTime: real
     											exitTime: real
@@ -93,12 +94,12 @@ class ViaVerde
 	  	return;
 	  ) pre car in set dom registeredCars;
 	  
-	  public goThroughHighway(car: Car, km: real, time: real, direction: Direction, highwayName: String, entrance: bool) == (	
-	  	--dcl cost: real := (entryKm-exitKm) * highway.costPerClass(car.carClass);
-	  	addToRecords(car, mk_ViaVerdeRecord(mk_HighwayRecord(km, time, direction, highwayName, entrance), 0));
+	  public goThroughHighway(car: Car, entryKm: real, exitKm: real, entryTime: real, exitTime: real, direction: Direction, highway: Highway) == (	
+	  	dcl cost: real := (entryKm-exitKm) * highway.costPerClass(car.carClass);
+	  	addToRecords(car, mk_ViaVerdeRecord(mk_HighwayRecord(entryKm, exitKm, entryTime, exitTime, direction, highway.name), cost));
 	  	return;
 	  )
-	  pre car in set (dom registeredCars) union (dom unRegisteredCarsRecords);	  
+	  pre car in set (dom registeredCars) union (dom unRegisteredCarsRecords) and entryKm < exitKm;	  
 	  
 	  public goThroughPark(car: Car, entryTime: real, exitTime: real, park: String) == (
 	  	dcl cost: real := ((entryTime-exitTime) - (entryTime-exitTime mod 60) div 60) *parks(park);
