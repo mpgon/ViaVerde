@@ -5,13 +5,12 @@ class ViaVerde
   	  	
     public Car::licensePlate:String
     						carClass:CarClass
-    						brand:Brand
-    						model:String
-    						owner:String;
+    						brandModel:BrandModel;
     						
     public CarClass = <a> | <b> | <c> | <d>;
     
-    public Brand = <Mercedes> | <Audi> | <KIA> | <Hyundai> | <BMW> | <Mitsubishi>;
+    public BrandModel = <Mercedes> * <Benz> | <Audi> * <A4> | <KIA> * <Leo> | <Hyundai> * <Coupe>
+    | <BMW> * <X3> | <Mitsubishi> * <Lancer>;
     
     public ViaVerdeDevice::id:String
     												creditCard:String
@@ -73,7 +72,11 @@ class ViaVerde
     --A car is either registered or unregistered
     inv dom registeredCars inter dom unRegisteredCarsRecords = {};
     
-  operations  
+  operations
+    public ViaVerde: () ==> ViaVerde
+			ViaVerde() == 
+				return self;
+				
 	  public registerCar(car: Car, creditCard: String, id: String) == (
 	  	registeredCars := registeredCars munion { car |-> mk_ViaVerdeDevice(id, creditCard, unRegisteredCarsRecords(car))};
 	  	unRegisteredCarsRecords := {car} <-: unRegisteredCarsRecords;
@@ -119,6 +122,7 @@ class ViaVerde
   		return;
   	)
   	pre car in set dom registeredCars;
+  		
   functions  
   	public retrieveVehicleLocation(licensePlate: String) res: <NotFound> | String*real*real ==
   		<NotFound>;
@@ -155,4 +159,13 @@ class ViaVerde
 	  								vv_record.record.entryKm = tollbooth.km and
 	  								vv_record.record.direction = tollbooth.direction )
 end ViaVerde
+
+/*
+Como usar:
+Configurar run com "console" nesta classe.
+
+Exemplo comandos:
+create vv := new ViaVerde()
+print vv.registerCar(mk_Car("12-45-AV", <a>, mk_(<Audi>, <A4>)), "1234687854", "1")
+*/
   
