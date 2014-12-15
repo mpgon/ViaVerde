@@ -59,17 +59,10 @@ class ViaVerde
   				
   	inv forall costPerHour in set rng parks & costPerHour >= 0;
   	  	
-  	inv forall device in set rng registeredCars &
+  	inv forall device in set rng unRegisteredCarsRecords union rng registeredCars &
   				forall vv_record in set elems device.records &
-  						validRecordCost(vv_record) and
   						validRecordKm(vv_record) and
   						consistentRecordKm(vv_record, rng highways);
-  								
-  	inv forall deviceSeq in set rng unRegisteredCarsRecords &
-		  		forall vv_record in set elems deviceSeq &
-						validRecordCost(vv_record) and
-						validRecordKm(vv_record) and
-						consistentRecordKm(vv_record, rng highways);
   				
     --A car is either registered or unregistered
     inv dom registeredCars inter dom unRegisteredCarsRecords = {};
@@ -130,12 +123,6 @@ class ViaVerde
   functions  
   	public retrieveVehicleLocation(licensePlate: String) res: <NotFound> | String*real*real ==
   		<NotFound>;
-  	
-  	--Positive costs	
-  	private validRecordCost(vv_record: ViaVerdeRecord) res: bool ==
-  			vv_record.cost >= 0 and
-  						( is_OneTimeRecord(vv_record.record) =>
-  								vv_record.record.cost >= 0 );
   								
 		public remove[@T](e: @T, s: seq of @T) res: seq of @T ==
     	[s(i) | i in set inds s & s(i) <> e];
@@ -147,21 +134,28 @@ class ViaVerde
   	private validRecordKm(vv_record: ViaVerdeRecord) res: bool ==
 				( is_HighwayRecord(vv_record.record) =>
 	  					vv_record.record.entryKm >= 0 and vv_record.record.exitKm >= 0 and
-	  					vv_record.record.entryKm < vv_record.record.exitKm ) and
+	  					greaterOrZero(vv_record.record.entryKm, vv_record.record.exitKm) ) and
 	  		( is_ParkingRecord(vv_record.record) =>
 	  					vv_record.record.entryTime >= 0 and vv_record.record.exitTime >= 0 and
-	  					vv_record.record.entryTime < vv_record.record.exitTime );
+	  					greaterOrZero(vv_record.record.entryTime, vv_record.record.exitTime) );
 	  
 	  --Entry/exit km in records match existing tollbooths		
 	  private consistentRecordKm(vv_record: ViaVerdeRecord, highways: set of Highway) res: bool ==
 	  		is_HighwayRecord(vv_record.record) =>
 	  				exists highway in set highways &
 	  						( exists tollbooth in set dom highway.costPerTollbooth &
-	  								vv_record.record.exitKm = tollbooth.km and
-	  								vv_record.record.direction = tollbooth.direction ) and
-	  						( exists tollbooth in set dom highway.costPerTollbooth &
 	  								vv_record.record.entryKm = tollbooth.km and
-	  								vv_record.record.direction = tollbooth.direction )
+	  								vv_record.record.direction = tollbooth.direction ) and
+	  								
+	  						--If client has already exited
+	  						vv_record.record.exitKm > 0 =>
+			  						( exists tollbooth in set dom highway.costPerTollbooth &
+			  								vv_record.record.exitKm = tollbooth.km and
+			  								vv_record.record.direction = tollbooth.direction );
+	  								
+	  private greaterOrZero(first: real, second: real) res: bool ==
+	  		second >= first or second = 0;
+	  		
 end ViaVerde
 
 /*
