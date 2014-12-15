@@ -75,8 +75,11 @@ class ViaVerde
     
   operations  
 	  public registerCar(car: Car, creditCard: String, id: String) == (
-	  	registeredCars := registeredCars munion { car |-> mk_ViaVerdeDevice(id, creditCard, unRegisteredCarsRecords(car))};
-	  	unRegisteredCarsRecords := {car} <-: unRegisteredCarsRecords;
+	  	if(car in set dom unRegisteredCarsRecords) then (
+		  	registeredCars := registeredCars munion { car |-> mk_ViaVerdeDevice(id, creditCard, unRegisteredCarsRecords(car))};
+		  	unRegisteredCarsRecords := {car} <-: unRegisteredCarsRecords 
+		 ) else 		   
+		  		registeredCars := registeredCars munion { car |-> mk_ViaVerdeDevice(id, creditCard, unRegisteredCarsRecords(car))};
 	  	return;
 	  );
 	  
@@ -93,7 +96,7 @@ class ViaVerde
 	  pre car in set (dom registeredCars) union (dom unRegisteredCarsRecords) and entryKm < exitKm;	  
 	  
 	  public goThroughPark(car: Car, entryTime: real, exitTime: real, park: String) == (
-	  	dcl cost: real := (entryTime-exitTime mod 60)*parks(park);
+	  	dcl cost: real := ((entryTime-exitTime) - (entryTime-exitTime mod 60) div 60) *parks(park);
 	  	
 	  	dcl viarecord: ViaVerdeRecord := mk_ViaVerdeRecord(mk_ParkingRecord(entryTime, exitTime, park), cost);
 	  	if(car in set dom registeredCars) then
