@@ -21,6 +21,8 @@ class ViaVerde
     												
     public HighwayRecord::entryKm: real
     											exitKm: real
+    											entryTime: real
+    											exitTime: real
     											direction: Direction
     											highway: String;
     											
@@ -82,41 +84,33 @@ class ViaVerde
 		  	registeredCars := registeredCars munion { car |-> mk_ViaVerdeDevice(id, creditCard, unRegisteredCarsRecords(car))};
 		  	unRegisteredCarsRecords := {car} <-: unRegisteredCarsRecords 
 		 ) else 		   
-		  		registeredCars := registeredCars munion { car |-> mk_ViaVerdeDevice(id, creditCard, unRegisteredCarsRecords(car))};
+	  		registeredCars := registeredCars munion { car |-> mk_ViaVerdeDevice(id, creditCard, [])};
 	  	return;
 	  );
 	  
-	  public goThroughHighway(car: Car, entryKm: real, exitKm: real, direction: Direction, highway: Highway) == (	
+	  public unregisterCar(car: Car) == (
+  		unRegisteredCarsRecords := unRegisteredCarsRecords munion { car |-> registeredCars(car).records};
+	  	registeredCars := {car} <-: registeredCars;
+	  	return;
+	  ) pre car in set dom registeredCars;
+	  
+	  public goThroughHighway(car: Car, entryKm: real, exitKm: real, entryTime: real, exitTime: real, direction: Direction, highway: Highway) == (	
 	  	dcl cost: real := (entryKm-exitKm) * highway.costPerClass(car.carClass);
-	  	
-	  	dcl viarecord: ViaVerdeRecord := mk_ViaVerdeRecord(mk_HighwayRecord(entryKm, exitKm, direction, highway.name), cost);
-	  	if(car in set dom registeredCars) then
-	  		registeredCars(car).records := registeredCars(car).records ^ [viarecord]
-	  	else 
-	  		unRegisteredCarsRecords(car) := unRegisteredCarsRecords(car) ^ [viarecord];
+	  	addToRecords(car, mk_ViaVerdeRecord(mk_HighwayRecord(entryKm, exitKm, entryTime, exitTime, direction, highway.name), cost));
 	  	return;
 	  )
 	  pre car in set (dom registeredCars) union (dom unRegisteredCarsRecords) and entryKm < exitKm;	  
 	  
 	  public goThroughPark(car: Car, entryTime: real, exitTime: real, park: String) == (
 	  	dcl cost: real := ((entryTime-exitTime) - (entryTime-exitTime mod 60) div 60) *parks(park);
-	  	
-	  	dcl viarecord: ViaVerdeRecord := mk_ViaVerdeRecord(mk_ParkingRecord(entryTime, exitTime, park), cost);
-	  	if(car in set dom registeredCars) then
-	  		registeredCars(car).records := registeredCars(car).records ^ [viarecord]
-	  	else 
-	  		unRegisteredCarsRecords(car) := unRegisteredCarsRecords(car) ^ [viarecord];
-	  	
+	  	addToRecords(car, mk_ViaVerdeRecord(mk_ParkingRecord(entryTime, exitTime, park), cost));
 	  	return;
 	  )
 	  pre car in set (dom registeredCars) union (dom unRegisteredCarsRecords) and entryTime < exitTime;
 	  
 	  public goThroughOneTime(car: Car, cost: real, oneTime: OneTime, time: real) == (	  	
-	  	dcl viarecord: ViaVerdeRecord := mk_ViaVerdeRecord(mk_OneTimeRecord(oneTime, time), cost);
-	  	if(car in set dom registeredCars) then
-	  		registeredCars(car).records := registeredCars(car).records ^ [viarecord]
-	  	else 
-	  		unRegisteredCarsRecords(car) := unRegisteredCarsRecords(car) ^ [viarecord];	  	return;
+	  	addToRecords(car, mk_ViaVerdeRecord(mk_OneTimeRecord(oneTime, time), cost));
+  		return;
 	  )
 	  pre car in set (dom registeredCars) union (dom unRegisteredCarsRecords);
   
@@ -125,6 +119,13 @@ class ViaVerde
   		return;
   	)
   	pre car in set dom registeredCars;
+  	
+  	public addToRecords(car: Car, viaVerdeRecord: ViaVerdeRecord) == (
+  		if(car in set dom registeredCars) then
+	  		registeredCars(car).records := registeredCars(car).records ^ [viaVerdeRecord]
+	  	else 
+	  		unRegisteredCarsRecords(car) := unRegisteredCarsRecords(car) ^ [viaVerdeRecord];	  	
+  	)
   		
   functions  
   	public retrieveVehicleLocation(licensePlate: String) res: <NotFound> | String*real*real ==
