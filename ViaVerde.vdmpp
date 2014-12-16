@@ -45,11 +45,13 @@ class ViaVerde
     									direction: Direction;
     
   instance variables
-  	--public highways: inmap String to Highway := { |-> };
-  	public highways: inmap String to Highway := { "jo" |-> mk_Highway({<a> |-> 10, <b> |-> 11, <c> |-> 12, <d> |-> 13}, {mk_Tollbooth(0, <Forward>) |-> 10, mk_Tollbooth(10, <Forward>) |-> 12}, "jo")};
+  	public highways: inmap String to Highway := { |-> };
+  	--public highways: inmap String to Highway := { "jo" |-> mk_Highway({<a> |-> 10, <b> |-> 11, <c> |-> 12, <d> |-> 13}, {mk_Tollbooth(0, <Forward>) |-> 10, mk_Tollbooth(10, <Forward>) |-> 12}, "jo")};
+  	
   	--Park name -> Cost per hour
-  	--public parks: inmap String to real := { |-> };  
-  	public parks: inmap String to real := { "jo2" |-> 10};
+  	public parks: inmap String to real := { |-> };  
+  	--public parks: inmap String to real := { "jo2" |-> 10};
+  	
   	public registeredCars: inmap Car to ViaVerdeDevice := { |-> };
   	public unRegisteredCarsRecords: map Car to seq of ViaVerdeRecord := { |-> };
   	
@@ -130,9 +132,9 @@ class ViaVerde
 	  			registeredCars(car).records(len registeredCars(car).records).cost := cost;
 	  			registeredCars(car).records(len registeredCars(car).records).record.exitTime := time
 	  		) else
-			  	cost := (abs (unRegisteredCarsRecords(car)(len registeredCars(car).records).record.entryTime-time)) *parks(park);	  		
-	  			unRegisteredCarsRecords(car)(len registeredCars(car).records).cost := cost;
-	  			unRegisteredCarsRecords(car)(len registeredCars(car).records).record.exitTime := time
+			  	cost := (abs (unRegisteredCarsRecords(car)(len unRegisteredCarsRecords(car)).record.entryTime-time)) *parks(park);	  		
+	  			unRegisteredCarsRecords(car)(len unRegisteredCarsRecords(car)).cost := cost;
+	  			unRegisteredCarsRecords(car)(len unRegisteredCarsRecords(car)).record.exitTime := time
 	  		)
 	  	else 	  		
 	  		addToRecords(car, mk_ViaVerdeRecord(mk_ParkingRecord(time, 0, park), cost));	  	
