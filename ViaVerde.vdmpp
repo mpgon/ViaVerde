@@ -97,17 +97,39 @@ class ViaVerde
 	  	registeredCars := {car} <-: registeredCars;
 	  ) pre car in set dom registeredCars;
 	  
-	  public goThroughHighway(car: Car, entryKm: real, exitKm: real, entryTime: real, exitTime: real, direction: Direction, highway: Highway) == (	
-	  	dcl cost: real := (entryKm-exitKm) * highway.costPerClass(car.brandModel.#3);
-	  	addToRecords(car, mk_ViaVerdeRecord(mk_HighwayRecord(entryKm, exitKm, entryTime, exitTime, direction, highway.name), cost));
+	  public goThroughHighway(car: Car, km: real, time: real, direction: Direction, entrance:bool, highway: Highway) == (	
+	  	dcl cost: real := 0;
+	  	if(not entrance) then (
+	  		cost := (registeredCars(car).records(len registeredCars(car).records).record.entryKm-km) * highway.costPerClass(car.brandModel.#3);
+	  		if(car in set dom registeredCars) then (
+	  			registeredCars(car).records(len registeredCars(car).records).cost := cost;
+	  			registeredCars(car).records(len registeredCars(car).records).record.exitKM := km;
+	  			registeredCars(car).records(len registeredCars(car).records).record.exitTime := time
+	  		) else
+	  			unRegisteredCarsRecords(car)(len registeredCars(car).records).cost := cost;
+	  			unRegisteredCarsRecords(car)(len registeredCars(car).records).record.exitKM := km;
+	  			unRegisteredCarsRecords(car)(len registeredCars(car).records).record.exitTime := time
+	  		)
+	  	else 	  		
+	  		addToRecords(car, mk_ViaVerdeRecord(mk_HighwayRecord(km, 0, time, 0, direction, highway.name), cost));
 	  )
-	  pre car in set (dom registeredCars) union (dom unRegisteredCarsRecords) and entryKm < exitKm;	  
+	  pre car in set (dom registeredCars) union (dom unRegisteredCarsRecords);	  
 	  
-	  public goThroughPark(car: Car, entryTime: real, exitTime: real, park: String) == (
-	  	dcl cost: real := ((entryTime-exitTime) - (entryTime-exitTime mod 60) div 60) *parks(park);
-	  	addToRecords(car, mk_ViaVerdeRecord(mk_ParkingRecord(entryTime, exitTime, park), cost));
+	  public goThroughPark(car: Car, time: real, entrance: bool, park: String) == (
+	  	dcl cost: real := 0;
+	  	if(not entrance) then (
+	  		cost := (registeredCars(car).records(len registeredCars(car).records).record.entryTime-time) *parks(park);
+	  		if(car in set dom registeredCars) then (
+	  			registeredCars(car).records(len registeredCars(car).records).cost := cost;
+	  			registeredCars(car).records(len registeredCars(car).records).record.exitTime := time
+	  		) else
+	  			unRegisteredCarsRecords(car)(len registeredCars(car).records).cost := cost;
+	  			unRegisteredCarsRecords(car)(len registeredCars(car).records).record.exitTime := time
+	  		)
+	  	else 	  		
+	  		addToRecords(car, mk_ViaVerdeRecord(mk_ParkingRecord(time, 0, park), cost));	  	
 	  )
-	  pre car in set (dom registeredCars) union (dom unRegisteredCarsRecords) and entryTime < exitTime;
+	  pre car in set (dom registeredCars) union (dom unRegisteredCarsRecords);
 	  
 	  public goThroughOneTime(car: Car, cost: real, oneTime: OneTime, time: real) == (	  	
 	  	addToRecords(car, mk_ViaVerdeRecord(mk_OneTimeRecord(oneTime, time), cost));
