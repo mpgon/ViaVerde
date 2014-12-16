@@ -55,14 +55,11 @@ class ViaVerde
   	--Entry time/KM < Exit time/KM
   	
   	inv forall highway in set rng highways &
-  				forall cpc in set rng highway.costPerClass,
-  				cpt in set rng highway.costPerTollbooth & cpc >= 0 and cpt >= 0; 				
-  	inv forall costPerHour in set rng parks & costPerHour >= 0; 	  	
-  	inv forall device in set rng unRegisteredCarsRecords union rng registeredCars &
-  				forall vv_record in set elems device.records &
-  						validRecordKm(vv_record) and
-  						consistentRecordKm(vv_record, rng highways) and
-  						consistentNames(vv_record, rng highways, dom parks);
+			forall cpc in set rng highway.costPerClass &
+				cpc >= 0;
+			inv forall highway in set rng highways &
+			forall cpt in set rng highway.costPerTollbooth &
+			cpt >= 0;
   						
   			
     --A car is either registered or unregistered
@@ -101,16 +98,16 @@ class ViaVerde
 	  	dcl cost: real := 0;
 	  	if(not entrance) then (
 	  		if(car in set dom registeredCars) then (
-		  		dcl as: real := registeredCars(car).records(len registeredCars(car).records).record.entryKm-km;
-	  			cost :=  as * highway.costPerClass(car.brandModel.#3);
+		  		dcl kmCost: real := abs registeredCars(car).records(len registeredCars(car).records).record.entryKm-km;
+	  			cost :=  kmCost * highway.costPerClass(car.brandModel.#3);
 	  			registeredCars(car).records(len registeredCars(car).records).cost := cost;
-	  			registeredCars(car).records(len registeredCars(car).records).record.exitKM := km;
+	  			registeredCars(car).records(len registeredCars(car).records).record.exitKm := km;
 	  			registeredCars(car).records(len registeredCars(car).records).record.exitTime := time
 	  		) else (
-	  			dcl as: real := unRegisteredCarsRecords(car)(len unRegisteredCarsRecords(car)).record.entryKm-km;
-	  			cost :=  as * highway.costPerClass(car.brandModel.#3);
+	  			dcl kmCost: real := abs unRegisteredCarsRecords(car)(len unRegisteredCarsRecords(car)).record.entryKm-km;
+	  			cost :=  kmCost * highway.costPerClass(car.brandModel.#3);
 	  			unRegisteredCarsRecords(car)(len registeredCars(car).records).cost := cost;
-	  			unRegisteredCarsRecords(car)(len registeredCars(car).records).record.exitKM := km;
+	  			unRegisteredCarsRecords(car)(len registeredCars(car).records).record.exitKm := km;
 	  			unRegisteredCarsRecords(car)(len registeredCars(car).records).record.exitTime := time
 	  		))
 	  	else 	  		
@@ -122,11 +119,12 @@ class ViaVerde
 	  public goThroughPark(car: Car, time: real, entrance: bool, park: String) == (
 	  	dcl cost: real := 0;
 	  	if(not entrance) then (
-	  		cost := (registeredCars(car).records(len registeredCars(car).records).record.entryTime-time) *parks(park);
 	  		if(car in set dom registeredCars) then (
+			  	cost := (abs (registeredCars(car).records(len registeredCars(car).records).record.entryTime-time)) *parks(park);
 	  			registeredCars(car).records(len registeredCars(car).records).cost := cost;
 	  			registeredCars(car).records(len registeredCars(car).records).record.exitTime := time
 	  		) else
+			  	cost := (abs (unRegisteredCarsRecords(car)(len registeredCars(car).records).record.entryTime-time)) *parks(park);	  		
 	  			unRegisteredCarsRecords(car)(len registeredCars(car).records).cost := cost;
 	  			unRegisteredCarsRecords(car)(len registeredCars(car).records).record.exitTime := time
 	  		)
@@ -236,5 +234,11 @@ Exemplo comandos:
 create vv := new ViaVerde()
 print vv.registerCar(mk_Car("12-45-AV", mk_(<Audi>, <A4>, <a>)), "1234687854", "1")
 print vv.goThroughHighway(mk_Car("12-45-AV", mk_(<Audi>, <A4>, <a>)), 11, 1133, <Forward>, true, mk_Highway({<a> |-> 10, <b> |-> 11, <c> |-> 12, <d> |-> 13}, {mk_Tollbooth(0, <Forward>) |-> 10, mk_Tollbooth(10, <Forward>) |-> 12}, "jo"))
+print vv.goThroughHighway(mk_Car("12-45-AV", mk_(<Audi>, <A4>, <a>)), 15, 1500, <Forward>, false, mk_Highway({<a> |-> 10, <b> |-> 11, <c> |-> 12, <d> |-> 13}, {mk_Tollbooth(0, <Forward>) |-> 10, mk_Tollbooth(10, <Forward>) |-> 12}, "jo"))
+print vv.goThroughPark(mk_Car("12-45-AV", mk_(<Audi>, <A4>, <a>)), 11, 1133, <Forward>, true, mk_Highway({<a> |-> 10, <b> |-> 11, <c> |-> 12, <d> |-> 13}, {mk_Tollbooth(0, <Forward>) |-> 10, mk_Tollbooth(10, <Forward>) |-> 12}, "jo"))
+print vv.goThroughPark(mk_Car("12-45-AV", mk_(<Audi>, <A4>, <a>)), 15, 1500, <Forward>, false, mk_Highway({<a> |-> 10, <b> |-> 11, <c> |-> 12, <d> |-> 13}, {mk_Tollbooth(0, <Forward>) |-> 10, mk_Tollbooth(10, <Forward>) |-> 12}, "jo"))
+print vv.goThroughHighway(mk_Car("12-45-AV", mk_(<Audi>, <A4>, <a>)), 11, 1133, <Forward>, true, mk_Highway({<a> |-> 10, <b> |-> 11, <c> |-> 12, <d> |-> 13}, {mk_Tollbooth(0, <Forward>) |-> 10, mk_Tollbooth(10, <Forward>) |-> 12}, "jo"))
+print vv.goThroughHighway(mk_Car("12-45-AV", mk_(<Audi>, <A4>, <a>)), 15, 1500, <Forward>, false, mk_Highway({<a> |-> 10, <b> |-> 11, <c> |-> 12, <d> |-> 13}, {mk_Tollbooth(0, <Forward>) |-> 10, mk_Tollbooth(10, <Forward>) |-> 12}, "jo"))
+print vv.registeredCars(mk_Car("12-45-AV", mk_(<Audi>, <A4>, <a>))).records
 */
   
