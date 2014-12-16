@@ -4,13 +4,13 @@ class ViaVerde
   	public String = seq1 of char;
   	  	
     public Car::licensePlate:String
-    						carClass:CarClass
     						brandModel:BrandModel;
     						
     public CarClass = <a> | <b> | <c> | <d>;
-    
-    public BrandModel = <Mercedes> * <Benz> | <Audi> * <A4> | <KIA> * <Leo> | <Hyundai> * <Coupe>
-    | <BMW> * <X3> | <Mitsubishi> * <Lancer>;
+    						
+    -- Brand * Model * Class
+    public BrandModel = <Mercedes> * <Benz> * <a> | <Audi> * <A4> * <a> | <KIA> * <Leo> * <a> | <Hyundai> * <Coupe> * <a>
+    | <BMW> * <X3> * <a> | <Mitsubishi> * <Lancer> * <a>;
     
     public ViaVerdeDevice::id:String
     												creditCard:String
@@ -21,6 +21,8 @@ class ViaVerde
     												
     public HighwayRecord::entryKm: real
     											exitKm: real
+    											entryTime: real
+    											exitTime: real
     											direction: Direction
     											highway: String;
     											
@@ -51,113 +53,153 @@ class ViaVerde
   	
   	--All cost, distance and time units >= 0
   	--Entry time/KM < Exit time/KM
+  	
   	inv forall highway in set rng highways &
   				forall cpc in set rng highway.costPerClass,
-  				cpt in set rng highway.costPerTollbooth & cpc >= 0 and cpt >= 0;
-  				
-  	inv forall costPerHour in set rng parks & costPerHour >= 0;
-  	  	
-  	inv forall device in set rng registeredCars &
+  				cpt in set rng highway.costPerTollbooth & cpc >= 0 and cpt >= 0; 				
+  	inv forall costPerHour in set rng parks & costPerHour >= 0; 	  	
+  	inv forall device in set rng unRegisteredCarsRecords union rng registeredCars &
   				forall vv_record in set elems device.records &
-  						validRecordCost(vv_record) and
   						validRecordKm(vv_record) and
-  						consistentRecordKm(vv_record, rng highways);
-  								
-  	inv forall deviceSeq in set rng unRegisteredCarsRecords &
-		  		forall vv_record in set elems deviceSeq &
-						validRecordCost(vv_record) and
-						validRecordKm(vv_record) and
-						consistentRecordKm(vv_record, rng highways);
-  				
+  						consistentRecordKm(vv_record, rng highways) and
+  						consistentNames(vv_record, rng highways, dom parks);
+  						
+  			
     --A car is either registered or unregistered
     inv dom registeredCars inter dom unRegisteredCarsRecords = {};
     
+    --Unique license plate in the whole system
+    inv not exists a, b in set dom unRegisteredCarsRecords union dom registeredCars &
+    			a.licensePlate = b.licensePlate and 
+    			(a.brandModel <> b.brandModel or
+    			 (a in set dom registeredCars and b in set dom unRegisteredCarsRecords) or
+    			 (a in set dom unRegisteredCarsRecords and b in set dom registeredCars));
+    
+    --An highway must have prices set for every class
+    inv not exists h in set rng highways & dom h.costPerClass	inter {<a>, <b>, <c>, <d>} <> {<a>, <b>, <c>, <d>};
+        
+    --A car can't be in more then a place at a time (being it a park, an highway, or a mix)		
   operations
     public ViaVerde: () ==> ViaVerde
 			ViaVerde() == 
 				return self;
 				
 	  public registerCar(car: Car, creditCard: String, id: String) == (
-	  	registeredCars := registeredCars munion { car |-> mk_ViaVerdeDevice(id, creditCard, unRegisteredCarsRecords(car))};
-	  	unRegisteredCarsRecords := {car} <-: unRegisteredCarsRecords;
-	  	return;
+	  	if(car in set dom unRegisteredCarsRecords) then (
+		  	registeredCars := registeredCars munion { car |-> mk_ViaVerdeDevice(id, creditCard, unRegisteredCarsRecords(car))};
+		  	unRegisteredCarsRecords := {car} <-: unRegisteredCarsRecords 
+		 ) else 		   
+	  		registeredCars := registeredCars munion { car |-> mk_ViaVerdeDevice(id, creditCard, [])};
 	  );
 	  
-	  public goThroughHighway(car: Car, entryKm: real, exitKm: real, direction: Direction, highway: Highway) == (	
-	  	dcl cost: real := (entryKm-exitKm) * highway.costPerClass(car.carClass);
-	  	
-	  	dcl viarecord: ViaVerdeRecord := mk_ViaVerdeRecord(mk_HighwayRecord(entryKm, exitKm, direction, highway.name), cost);
-	  	if(car in set dom registeredCars) then
-	  		registeredCars(car).records := registeredCars(car).records ^ [viarecord]
-	  	else 
-	  		unRegisteredCarsRecords(car) := unRegisteredCarsRecords(car) ^ [viarecord];
-	  	return;
+	  public unregisterCar(car: Car) == (
+  		unRegisteredCarsRecords := unRegisteredCarsRecords munion { car |-> registeredCars(car).records};
+	  	registeredCars := {car} <-: registeredCars;
+	  ) pre car in set dom registeredCars;
+	  
+	  public goThroughHighway(car: Car, entryKm: real, exitKm: real, entryTime: real, exitTime: real, direction: Direction, highway: Highway) == (	
+	  	dcl cost: real := (entryKm-exitKm) * highway.costPerClass(car.brandModel.#3);
+	  	addToRecords(car, mk_ViaVerdeRecord(mk_HighwayRecord(entryKm, exitKm, entryTime, exitTime, direction, highway.name), cost));
 	  )
 	  pre car in set (dom registeredCars) union (dom unRegisteredCarsRecords) and entryKm < exitKm;	  
 	  
 	  public goThroughPark(car: Car, entryTime: real, exitTime: real, park: String) == (
-	  	dcl cost: real := (entryTime-exitTime mod 60)*parks(park);
-	  	
-	  	dcl viarecord: ViaVerdeRecord := mk_ViaVerdeRecord(mk_ParkingRecord(entryTime, exitTime, park), cost);
-	  	if(car in set dom registeredCars) then
-	  		registeredCars(car).records := registeredCars(car).records ^ [viarecord]
-	  	else 
-	  		unRegisteredCarsRecords(car) := unRegisteredCarsRecords(car) ^ [viarecord];
-	  	
-	  	return;
+	  	dcl cost: real := ((entryTime-exitTime) - (entryTime-exitTime mod 60) div 60) *parks(park);
+	  	addToRecords(car, mk_ViaVerdeRecord(mk_ParkingRecord(entryTime, exitTime, park), cost));
 	  )
 	  pre car in set (dom registeredCars) union (dom unRegisteredCarsRecords) and entryTime < exitTime;
 	  
 	  public goThroughOneTime(car: Car, cost: real, oneTime: OneTime, time: real) == (	  	
-	  	dcl viarecord: ViaVerdeRecord := mk_ViaVerdeRecord(mk_OneTimeRecord(oneTime, time), cost);
-	  	if(car in set dom registeredCars) then
-	  		registeredCars(car).records := registeredCars(car).records ^ [viarecord]
-	  	else 
-	  		unRegisteredCarsRecords(car) := unRegisteredCarsRecords(car) ^ [viarecord];	  	return;
+	  	addToRecords(car, mk_ViaVerdeRecord(mk_OneTimeRecord(oneTime, time), cost));
 	  )
 	  pre car in set (dom registeredCars) union (dom unRegisteredCarsRecords);
   
   	public setCreditCard(car: Car, creditCard: String) == (
   		registeredCars(car).creditCard := creditCard;
-  		return;
   	)
   	pre car in set dom registeredCars;
-  		
-  functions  
-  	public retrieveVehicleLocation(licensePlate: String) res: <NotFound> | String*real*real ==
-  		<NotFound>;
   	
-  	--Positive costs	
-  	private validRecordCost(vv_record: ViaVerdeRecord) res: bool ==
-  			vv_record.cost >= 0 and
-  						( is_OneTimeRecord(vv_record.record) =>
-  								vv_record.record.cost >= 0 );
-  								
+  	public addToRecords(car: Car, viaVerdeRecord: ViaVerdeRecord) == (
+  		if(car in set dom registeredCars) then
+	  		registeredCars(car).records := registeredCars(car).records ^ [viaVerdeRecord]
+	  	else 
+	  		unRegisteredCarsRecords(car) := unRegisteredCarsRecords(car) ^ [viaVerdeRecord];	  	
+  	);  	
+  	
+  		
+  	public retrieveVehicleLocation(licensePlate: String) res: <NotFound> | String ==
+			let vv_records = getRecordsFromLicensePlate(licensePlate) in
+				if exists vv_record in set elems vv_records & is_ParkingRecord(vv_record.record) and vv_record.record.exitTime = 0
+				then return (iota vv_record in set elems vv_records & is_ParkingRecord(vv_record.record) and vv_record.record.exitTime = 0).record.park 
+				elseif exists vv_record in set elems vv_records & is_HighwayRecord(vv_record.record) and vv_record.record.exitKm = 0
+				then return (iota vv_record in set elems vv_records & is_HighwayRecord(vv_record.record) and vv_record.record.exitKm = 0).record.highway
+				else return <NotFound>
+		pre exists car in set dom unRegisteredCarsRecords union dom registeredCars &
+						car.licensePlate = licensePlate;	
+				
+		public getRecordsFromLicensePlate(licensePlate: String) res: seq of ViaVerdeRecord == (
+			dcl car: Car | <NotFound> := getCarFromLicensePlate(licensePlate);
+			dcl records: seq of ViaVerdeRecord;
+						
+			if car = <NotFound> then return [];
+						
+			if car in set dom registeredCars
+			then records := registeredCars(car).records
+			else records := unRegisteredCarsRecords(car);
+			
+			return records;		
+		)
+		pre exists car in set dom unRegisteredCarsRecords union dom registeredCars &
+						car.licensePlate = licensePlate;
+		
+		public getCarFromLicensePlate(licensePlate: String) res: Car == (
+			return iota car in set dom unRegisteredCarsRecords union dom registeredCars &
+						car.licensePlate = licensePlate;
+		)
+		pre exists car in set dom unRegisteredCarsRecords union dom registeredCars &
+						car.licensePlate = licensePlate;
+						
+  functions  
 		public remove[@T](e: @T, s: seq of @T) res: seq of @T ==
     	[s(i) | i in set inds s & s(i) <> e];
     	
-    --public removeMap[@T](e: @T, s: map @T to seq of ViaVerdeRecord) res: map @T to seq of ViaVerdeRecord ==
-    --	[{ i |-> s(i)} | i in set dom s & s(i) <> e];
+    public removeMap[@T](e: @T, s: map @T to seq of ViaVerdeRecord) res: map @T to seq of ViaVerdeRecord ==
+    	{ i |-> s(i) | i in set dom s & s(i) <> e};
   	
-  	--Positive distances, entry before exit							
+  	--Positive distances/times, entry before exit							
   	private validRecordKm(vv_record: ViaVerdeRecord) res: bool ==
+  			is_OneTimeRecord(vv_record.record) => vv_record.record.time >= 0 and
 				( is_HighwayRecord(vv_record.record) =>
 	  					vv_record.record.entryKm >= 0 and vv_record.record.exitKm >= 0 and
-	  					vv_record.record.entryKm < vv_record.record.exitKm ) and
+	  					greaterOrZero(vv_record.record.entryKm, vv_record.record.exitKm) ) and
 	  		( is_ParkingRecord(vv_record.record) =>
 	  					vv_record.record.entryTime >= 0 and vv_record.record.exitTime >= 0 and
-	  					vv_record.record.entryTime < vv_record.record.exitTime );
+	  					greaterOrZero(vv_record.record.entryTime, vv_record.record.exitTime) );
 	  
 	  --Entry/exit km in records match existing tollbooths		
 	  private consistentRecordKm(vv_record: ViaVerdeRecord, highways: set of Highway) res: bool ==
 	  		is_HighwayRecord(vv_record.record) =>
 	  				exists highway in set highways &
-	  						( exists tollbooth in set dom highway.costPerTollbooth &
-	  								vv_record.record.exitKm = tollbooth.km and
-	  								vv_record.record.direction = tollbooth.direction ) and
+	  						highway.name = vv_record.record.highway and
 	  						( exists tollbooth in set dom highway.costPerTollbooth &
 	  								vv_record.record.entryKm = tollbooth.km and
-	  								vv_record.record.direction = tollbooth.direction )
+	  								vv_record.record.direction = tollbooth.direction ) and
+	  								
+	  						--If client has already exited
+	  						vv_record.record.exitKm > 0 =>
+			  						( exists tollbooth in set dom highway.costPerTollbooth &
+			  								vv_record.record.exitKm = tollbooth.km and
+			  								vv_record.record.direction = tollbooth.direction );
+	  
+	  --Records reference existing infrastructures
+	  consistentNames(vv_record: ViaVerdeRecord, highways: set of Highway, parks: set of String) res: bool ==
+	  		( is_HighwayRecord(vv_record.record) =>
+	  					exists highway in set highways & highway.name = vv_record.record.highway ) and
+	  		( is_ParkingRecord(vv_record.record) =>
+	  					exists park in set parks & park = vv_record.record.park );    
+	  								
+	  private greaterOrZero(first: real, second: real) res: bool ==
+	  		second >= first or second = 0;
 end ViaVerde
 
 /*
@@ -166,6 +208,6 @@ Configurar run com "console" nesta classe.
 
 Exemplo comandos:
 create vv := new ViaVerde()
-print vv.registerCar(mk_Car("12-45-AV", <a>, mk_(<Audi>, <A4>)), "1234687854", "1")
+print vv.registerCar(mk_Car("12-45-AV", mk_(<Audi>, <A4>, <a>)), "1234687854", "1")
 */
   
