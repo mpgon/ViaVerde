@@ -45,9 +45,11 @@ class ViaVerde
     									direction: Direction;
     
   instance variables
-  	public highways: inmap String to Highway := { |-> };
+  	--public highways: inmap String to Highway := { |-> };
+  	public highways: inmap String to Highway := { "jo" |-> mk_Highway({<a> |-> 10, <b> |-> 11, <c> |-> 12, <d> |-> 13}, {mk_Tollbooth(0, <Forward>) |-> 10, mk_Tollbooth(10, <Forward>) |-> 12}, "jo")};
   	--Park name -> Cost per hour
-  	public parks: inmap String to real := { |-> };   					
+  	--public parks: inmap String to real := { |-> };  
+  	public parks: inmap String to real := { "jo2" |-> 10};
   	public registeredCars: inmap Car to ViaVerdeDevice := { |-> };
   	public unRegisteredCarsRecords: map Car to seq of ViaVerdeRecord := { |-> };
   	
@@ -96,6 +98,9 @@ class ViaVerde
 	  
 	  public goThroughHighway(car: Car, km: real, time: real, direction: Direction, entrance:bool, highway: Highway) == (	
 	  	dcl cost: real := 0;
+	  	
+	  	checkRegistration(car);
+	  	
 	  	if(not entrance) then (
 	  		if(car in set dom registeredCars) then (
 		  		dcl kmCost: real := abs registeredCars(car).records(len registeredCars(car).records).record.entryKm-km;
@@ -112,12 +117,13 @@ class ViaVerde
 	  		))
 	  	else 	  		
 	  		addToRecords(car, mk_ViaVerdeRecord(mk_HighwayRecord(km, 0, time, 0, direction, highway.name), cost))
-	  )
-	  
-	  pre car in set (dom registeredCars) union (dom unRegisteredCarsRecords) and highway in set rng highways;	  
+	  )	  
+	  pre highway.name in set dom highways;	  
 	  
 	  public goThroughPark(car: Car, time: real, entrance: bool, park: String) == (
 	  	dcl cost: real := 0;
+	  	checkRegistration(car);	  	
+	  	
 	  	if(not entrance) then (
 	  		if(car in set dom registeredCars) then (
 			  	cost := (abs (registeredCars(car).records(len registeredCars(car).records).record.entryTime-time)) *parks(park);
@@ -131,12 +137,12 @@ class ViaVerde
 	  	else 	  		
 	  		addToRecords(car, mk_ViaVerdeRecord(mk_ParkingRecord(time, 0, park), cost));	  	
 	  )
-	  pre car in set (dom registeredCars) union (dom unRegisteredCarsRecords) and park in set dom parks;
+		pre park in set dom parks;
 	  
-	  public goThroughOneTime(car: Car, cost: real, oneTime: OneTime, time: real) == (	  	
+	  public goThroughOneTime(car: Car, cost: real, oneTime: OneTime, time: real) == (
+	  	checkRegistration(car);	  	
 	  	addToRecords(car, mk_ViaVerdeRecord(mk_OneTimeRecord(oneTime, time), cost));
-	  )
-	  pre car in set (dom registeredCars) union (dom unRegisteredCarsRecords);
+	  );
   
   	public setCreditCard(car: Car, creditCard: String) == (
   		registeredCars(car).creditCard := creditCard;
@@ -149,6 +155,11 @@ class ViaVerde
 	  	else 
 	  		unRegisteredCarsRecords(car) := unRegisteredCarsRecords(car) ^ [viaVerdeRecord];	  	
   	);  	
+  	
+  	public checkRegistration(car: Car) == (
+	  	if(car not in set (dom registeredCars) union (dom unRegisteredCarsRecords)) then
+	  		unRegisteredCarsRecords := unRegisteredCarsRecords munion { car |-> []};  		
+  	);
   	
   		
   	public retrieveVehicleLocation(licensePlate: String) res: <NotFound> | String ==
@@ -241,6 +252,7 @@ print vv.goThroughPark(mk_Car("12-45-AV", mk_(<Audi>, <A4>, <a>)), 1933, true, "
 print vv.goThroughPark(mk_Car("12-45-AV", mk_(<Audi>, <A4>, <a>)), 2000, false, "jo2"))
 
 print vv.goThroughOneTime(mk_Car("12-45-AV", mk_(<Audi>, <A4>, <a>)), 1133, <SCUT>, 10)
+
 print vv.registeredCars(mk_Car("12-45-AV", mk_(<Audi>, <A4>, <a>))).records
 */
   
