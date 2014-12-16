@@ -100,19 +100,23 @@ class ViaVerde
 	  public goThroughHighway(car: Car, km: real, time: real, direction: Direction, entrance:bool, highway: Highway) == (	
 	  	dcl cost: real := 0;
 	  	if(not entrance) then (
-	  		cost := (registeredCars(car).records(len registeredCars(car).records).record.entryKm-km) * highway.costPerClass(car.brandModel.#3);
 	  		if(car in set dom registeredCars) then (
+		  		dcl as: real := registeredCars(car).records(len registeredCars(car).records).record.entryKm-km;
+	  			cost :=  as * highway.costPerClass(car.brandModel.#3);
 	  			registeredCars(car).records(len registeredCars(car).records).cost := cost;
 	  			registeredCars(car).records(len registeredCars(car).records).record.exitKM := km;
 	  			registeredCars(car).records(len registeredCars(car).records).record.exitTime := time
-	  		) else
+	  		) else (
+	  			dcl as: real := unRegisteredCarsRecords(car)(len unRegisteredCarsRecords(car)).record.entryKm-km;
+	  			cost :=  as * highway.costPerClass(car.brandModel.#3);
 	  			unRegisteredCarsRecords(car)(len registeredCars(car).records).cost := cost;
 	  			unRegisteredCarsRecords(car)(len registeredCars(car).records).record.exitKM := km;
 	  			unRegisteredCarsRecords(car)(len registeredCars(car).records).record.exitTime := time
-	  		)
+	  		))
 	  	else 	  		
-	  		addToRecords(car, mk_ViaVerdeRecord(mk_HighwayRecord(km, 0, time, 0, direction, highway.name), cost));
+	  		addToRecords(car, mk_ViaVerdeRecord(mk_HighwayRecord(km, 0, time, 0, direction, highway.name), cost))
 	  )
+	  
 	  pre car in set (dom registeredCars) union (dom unRegisteredCarsRecords);	  
 	  
 	  public goThroughPark(car: Car, time: real, entrance: bool, park: String) == (
@@ -231,5 +235,6 @@ Configurar run com "console" nesta classe.
 Exemplo comandos:
 create vv := new ViaVerde()
 print vv.registerCar(mk_Car("12-45-AV", mk_(<Audi>, <A4>, <a>)), "1234687854", "1")
+print vv.goThroughHighway(mk_Car("12-45-AV", mk_(<Audi>, <A4>, <a>)), 11, 1133, <Forward>, true, mk_Highway({<a> |-> 10, <b> |-> 11, <c> |-> 12, <d> |-> 13}, {mk_Tollbooth(0, <Forward>) |-> 10, mk_Tollbooth(10, <Forward>) |-> 12}, "jo"))
 */
   
