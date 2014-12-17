@@ -1,0 +1,12 @@
+create vv := new ViaVerde()
+print vv.registerCar(mk_Car("12-45-AV", mk_(<Audi>, <A4>, <a>)), "1234687854", "1")
+print vv.goThroughHighway(mk_Car("12-45-AV", mk_(<Audi>, <A4>, <a>)), 11, 1133, <Forward>, true, mk_Highway({<a> |-> 10, <b> |-> 11, <c> |-> 12, <d> |-> 13}, {mk_Tollbooth(0, <Forward>) |-> 10, mk_Tollbooth(10, <Forward>) |-> 12}, "jo"))
+print vv.goThroughHighway(mk_Car("12-45-AV", mk_(<Audi>, <A4>, <a>)), 15, 1500, <Forward>, false, mk_Highway({<a> |-> 10, <b> |-> 11, <c> |-> 12, <d> |-> 13}, {mk_Tollbooth(0, <Forward>) |-> 10, mk_Tollbooth(10, <Forward>) |-> 12}, "jo"))
+	 
+print vv.parks := vv.parks munion { "jo2" |-> 10}
+print vv.goThroughPark(mk_Car("12-45-AV", mk_(<Audi>, <A4>, <a>)), 1933, true, "jo2"))
+print vv.goThroughPark(mk_Car("12-45-AV", mk_(<Audi>, <A4>, <a>)), 2000, false, "jo2"))
+
+print vv.goThroughOneTime(mk_Car("12-45-AV", mk_(<Audi>, <A4>, <a>)), 1133, <SCUT>, 10)
+
+print vv.registeredCars(mk_Car("12-45-AV", mk_(<Audi>, <A4>, <a>))).records

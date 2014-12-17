@@ -104,15 +104,17 @@ class ViaVerde
 				
 	  public registerCar(car: Car, creditCard: String, id: String) == (
 	  	if(car in set dom unRegisteredCarsRecords) then (
-		  	registeredCars := registeredCars munion { car |-> mk_ViaVerdeDevice(id, creditCard, unRegisteredCarsRecords(car))};
-		  	unRegisteredCarsRecords := {car} <-: unRegisteredCarsRecords 
+		  	atomic(
+		  		registeredCars := registeredCars munion { car |-> mk_ViaVerdeDevice(id, creditCard, unRegisteredCarsRecords(car))};
+		  		unRegisteredCarsRecords := {car} <-: unRegisteredCarsRecords;) 
 		 ) else 		   
 	  		registeredCars := registeredCars munion { car |-> mk_ViaVerdeDevice(id, creditCard, [])};
 	  );
 	  
 	  public unregisterCar(car: Car) == (
-  		unRegisteredCarsRecords := unRegisteredCarsRecords munion { car |-> registeredCars(car).records};
-	  	registeredCars := {car} <-: registeredCars;
+  		atomic(
+  			unRegisteredCarsRecords := unRegisteredCarsRecords munion { car |-> registeredCars(car).records};
+  			registeredCars := {car} <-: registeredCars;)
 	  ) pre car in set dom registeredCars;
 	  
 	  public goThroughHighway(car: Car, km: real, time: real, direction: Direction, entrance:bool, highway: Highway) == (	
