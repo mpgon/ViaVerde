@@ -57,13 +57,20 @@ class ViaVerde
   	
   	--All cost, distance and time units >= 0
   	--Entry time/KM < Exit time/KM
-  	
+  	--From here 	
   	inv forall highway in set rng highways &
 			forall cpc in set rng highway.costPerClass &
 				cpc >= 0;
-			inv forall highway in set rng highways &
+		inv forall highway in set rng highways &
 			forall cpt in set rng highway.costPerTollbooth &
-			cpt >= 0;
+				cpt >= 0;
+		inv forall costPerHour in set rng parks & costPerHour >= 0; 	  	
+  	inv forall device in set rng unRegisteredCarsRecords union rng registeredCars &
+  				forall vv_record in set elems device.records &
+  						validRecordKm(vv_record) and
+  						consistentRecordKm(vv_record, rng highways) and
+  						consistentNames(vv_record, rng highways, dom parks);
+  	--Until here							
   						
   			
     --A car is either registered or unregistered
@@ -79,7 +86,10 @@ class ViaVerde
     --An highway must have prices set for every class
     inv not exists h in set rng highways & dom h.costPerClass	inter {<a>, <b>, <c>, <d>} <> {<a>, <b>, <c>, <d>};
         
-    --A car can't be in more then a place at a time (being it a park, an highway, or a mix)		
+    --A car can't be in more then a place at a time (being it a park, an highway, or a mix)
+    inv forall device in set rng unRegisteredCarsRecords union rng registeredCars &
+				noTwoRecordsWithExitZero(device.records, false);
+  							
   operations
     public ViaVerde: () ==> ViaVerde
 			ViaVerde() == 
@@ -229,11 +239,28 @@ class ViaVerde
 			  								vv_record.record.direction = tollbooth.direction );
 	  
 	  --Records reference existing infrastructures
-	  consistentNames(vv_record: ViaVerdeRecord, highways: set of Highway, parks: set of String) res: bool ==
+	  private consistentNames(vv_record: ViaVerdeRecord, highways: set of Highway, parks: set of String) res: bool ==
 	  		( is_HighwayRecord(vv_record.record) =>
 	  					exists highway in set highways & highway.name = vv_record.record.highway ) and
 	  		( is_ParkingRecord(vv_record.record) =>
-	  					exists park in set parks & park = vv_record.record.park );    
+	  					exists park in set parks & park = vv_record.record.park );
+	  
+	  private hasExitZero(vv_record: ViaVerdeRecord) res: bool ==
+	  		if is_HighwayRecord(vv_record.record)
+	  		then vv_record.record.exitKm = 0
+	  		elseif is_ParkingRecord(vv_record.record)
+	  		then vv_record.record.exitTime = 0
+	  		else false;
+	  					
+	  public noTwoRecordsWithExitZero(records: seq of ViaVerdeRecord, alreadyFound: bool) res: bool ==
+	  		if len records = 0 then true
+	  		else let hasZero =  hasExitZero(hd records) in
+	  				if hasZero and alreadyFound
+	  				then false
+	  				elseif hasZero
+	  				then noTwoRecordsWithExitZero(tl records, true)
+	  				else noTwoRecordsWithExitZero(tl records, alreadyFound);
+			    
 	  								
 	  private greaterOrZero(first: real, second: real) res: bool ==
 	  		second >= first or second = 0;
