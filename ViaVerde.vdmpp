@@ -150,12 +150,10 @@ class ViaVerde
 	  	
 	  	if(not entrance) then (
 	  		if(car in set dom registeredCars) then (
-		  		IO`print("aaa"); 
 			  	cost := (abs (registeredCars(car).records(len registeredCars(car).records).record.entryTime-time)) *parks(park);
 	  			registeredCars(car).records(len registeredCars(car).records).cost := cost;
 	  			registeredCars(car).records(len registeredCars(car).records).record.exitTime := time
 	  		) else (
-		  		IO`print("aaaaa"); 
 			  	cost := (abs (unRegisteredCarsRecords(car)(len unRegisteredCarsRecords(car)).record.entryTime-time)) *parks(park);	  		
 	  			unRegisteredCarsRecords(car)(len unRegisteredCarsRecords(car)).cost := cost;
 	  			unRegisteredCarsRecords(car)(len unRegisteredCarsRecords(car)).record.exitTime := time;
