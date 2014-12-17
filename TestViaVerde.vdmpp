@@ -51,7 +51,7 @@ operations
 	  		  direction = <Forward>,
 	  		  entrance = true,
 	  		  highway = vv.highways("A1"),
-	  		  cost = 19.8
+	  		  cost = (exitkm - entrykm) * highway.costPerClass(car.brandModel.#3)
 	  	in (
 	  		vv.goThroughHighway(car,entrykm,entryTime,direction,entrance,highway);
 	  		vv.goThroughHighway(car,exitkm,exitTime,direction,not entrance,highway);
