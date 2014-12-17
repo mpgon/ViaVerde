@@ -7,7 +7,7 @@ operations
 			dcl vv : ViaVerde := new ViaVerde();
 			||(
 				vv.highways := {"A1" |-> 
-					mk_ViaVerde`Highway({<a> |-> 1, <b> |-> 1.5, <c> |-> 1.6, <d> |-> 1.9},
+					mk_ViaVerde`Highway({<a> |-> 0.1, <b> |-> 0.2, <c> |-> 0.3, <d> |-> 0.4},
 					{mk_ViaVerde`Tollbooth(5,<Forward>) |-> 0.4, mk_ViaVerde`Tollbooth(105,<Forward>) |-> 2.5},
 						"A1")},
 				vv.parks := {"Parque Gaia" |-> 0.5});			
@@ -31,15 +31,48 @@ operations
 	public testUnregisterCar: () ==> ()
 	  testUnregisterCar() == (
 	  	let vv = Setup(),
-	  		  car = mk_ViaVerde`Car("12345", mk_(<Mercedes>,<Benz>,<a>)),
-	  		  vvDevice = mk_ViaVerde`ViaVerdeDevice("0","101010",[]),
-	  		  unregisteredCars = {car |-> {vvDevice}}
-	  		  
+	  		  car = mk_ViaVerde`Car("12345", mk_(<Mercedes>,<Benz>,<a>))	  
 	  	in (
 	  		vv.registerCar(car,"101010","0"); -- tested previously
-	  		vv.unregisterCar(car); -- erro aqui, vejam o que se passa
-	  	  assertEqual(vv.registeredCars,  {});
-	  	  assertEqual(vv.unRegisteredCarsRecords,  unregisteredCars);
+	  		vv.unregisterCar(car); 
+	  	  assertEqual(vv.registeredCars,  {|->});
+	  	  assertEqual(vv.unRegisteredCarsRecords,  {car |-> []});
+	  	)
+	  );
+	  
+	public testGoThroughHighway: () ==> ()
+	  testGoThroughHighway() == (
+	  	let vv = Setup(),
+	  		  car = mk_ViaVerde`Car("12345", mk_(<Mercedes>,<Benz>,<a>)),
+	  		  entrykm = 2,
+	  		  exitkm = 200,
+	  		  entryTime = 1500,
+	  		  exitTime = 1630,
+	  		  direction = <Forward>,
+	  		  entrance = true,
+	  		  highway = vv.highways("A1"),
+	  		  cost = 19.8
+	  	in (
+	  		vv.registerCar(car,"101010","0"); -- tested previously
+	  		vv.goThroughHighway(car,entrykm,entryTime,direction,entrance,highway);
+	  		vv.goThroughHighway(car,exitkm,exitTime,direction,not entrance,highway);
+	  		assertEqual(vv.registeredCars(car).records(len vv.registeredCars(car).records).cost, cost); -- da negativo
+	  	)
+	  );
+	  
+	public testGoThroughPark: () ==> ()
+	  testGoThroughPark() == (
+	  	let vv = Setup(),
+	  		  car = mk_ViaVerde`Car("12345", mk_(<Mercedes>,<Benz>,<a>)),
+	  		  entryTime = 1933,
+	  		  exitTime = 2000,
+	  		  entrance = true,
+	  		  cost = 19.8
+	  	in (
+	  		vv.registerCar(car,"101010","0"); -- tested previously
+	  		vv.goThroughPark(car,entryTime,entrance,"Parque Gaia");
+	  		vv.goThroughPark(car,exitTime,not entrance,"Parque Gaia");
+	  		assertEqual(vv.registeredCars(car).records(len vv.registeredCars(car).records).cost, cost); -- ?
 	  	)
 	  );
 
@@ -48,6 +81,8 @@ operations
   testAll() == (
   	testRegisterCar();
   	testUnregisterCar();
+  	testGoThroughHighway();
+  	testGoThroughPark();
   );
   
   -- Tests with invalid inputs
@@ -55,15 +90,15 @@ operations
 end TestViaVerde
 
 
---test registerCar
+--test registerCar check
 
---test unregisterCar
+--test unregisterCar pending
 
---test goThroughHighway
+--test goThroughHighway 
 
---test goThroughHighway
+--test goThroughPark
 
---test goThroughHighway
+--test goThroughOneTime
 
 --test setCreditCard
 
