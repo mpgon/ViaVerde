@@ -65,11 +65,18 @@ class ViaVerde
 			forall cpt in set rng highway.costPerTollbooth &
 				cpt >= 0;
 		inv forall costPerHour in set rng parks & costPerHour >= 0; 	  	
-  	inv forall device in set rng unRegisteredCarsRecords union rng registeredCars &
-  				forall vv_record in set elems device.records &
+
+  	inv forall vv_records in set rng unRegisteredCarsRecords &
+						forall vv_record in set elems vv_records &
   						validRecordKm(vv_record) and
   						consistentRecordKm(vv_record, rng highways) and
   						consistentNames(vv_record, rng highways, dom parks);
+  						
+  	inv forall device in set rng registeredCars &
+  					forall vv_record in set elems device.records &
+  						validRecordKm(vv_record) and
+  						consistentRecordKm(vv_record, rng highways) and
+  						consistentNames(vv_record, rng highways, dom parks);					
   	--Until here							
   						
   			
