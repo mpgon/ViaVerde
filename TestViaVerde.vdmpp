@@ -18,7 +18,7 @@ operations
 			return vv;
 		);
 		
-			-- Tests with valid inputs	
+	-- Tests with valid inputs	
 		
 	public testRegisterCar: () ==> ()
 	  testRegisterCar() == (
@@ -121,66 +121,54 @@ operations
   );
   
   -- Tests with invalid inputs
+  
   public testUniqueCarLicense: () ==> ()
 	  testUniqueCarLicense() == (
 	  	let vv = Setup(),
-	  		  car = mk_ViaVerde`Car("12345", mk_(<Mercedes>,<Benz>,<a>)),
 	  		  car2 = mk_ViaVerde`Car("12345", mk_(<Audi>,<A4>,<a>))  		  
 	  	in (
-	  		vv.registerCar(car,"101010","0");
 	  		vv.registerCar(car2,"101010","1");
 	 	  	)
 	  );
 	  
-	  public testUnregisterNotRegistered: () ==> ()
-	  testUnregisterNotRegistered() == (
-	  	let vv = Setup(),
-	  		  car = mk_ViaVerde`Car("12345", mk_(<Mercedes>,<Benz>,<a>)),
-	  		  vvDevice = mk_ViaVerde`ViaVerdeDevice("0","101010",[])
-	  	in (
-	  		vv.unregisterCar(car); 
-	 	  	)
-	  );
+  public testUnregisterNotRegistered: () ==> ()
+  testUnregisterNotRegistered() == (
+  	let vv = Setup()
+  	in (
+  		vv.unregisterCar(car); 
+ 	  	)
+  );
 
-	  public testGoThroughNotLeaving: () ==> ()
-	  testGoThroughNotLeaving() == (
-	  	let vv = Setup(),
-	  		  car = mk_ViaVerde`Car("12345", mk_(<Mercedes>,<Benz>,<a>)),
-	  		  vvDevice = mk_ViaVerde`ViaVerdeDevice("0","101010",[]),
-	  		  entrykm = 2,
-	  		  exitkm = 200,
-	  		  entryTime = 1500,
-	  		  exitTime = 1630,
-	  		  direction = <Forward>,
-	  		  entrance = true,
-	  		  highway = vv.highways("A1"),
-	  		  cost = 19.8
-	  	in (
-	  		vv.registerCar(car,"101010","0"); -- tested previously
-	  		vv.goThroughHighway(car,entrykm,entryTime,direction,entrance,highway);
-	  		vv.goThroughPark(car,exitTime, entrance,"Parque Gaia");
-	 	  	)
-	  );  
+  public testGoThroughNotLeaving: () ==> ()
+  testGoThroughNotLeaving() == (
+  	let vv = Setup(),
+  		  entrykm = 2,
+  		  entryTime = 1500,
+  		  exitTime = 1630,
+  		  direction = <Forward>,
+  		  entrance = true,
+  		  highway = vv.highways("A1")
+  	in (
+  		vv.goThroughHighway(car,entrykm,entryTime,direction,entrance,highway);
+  		vv.goThroughPark(car,exitTime, entrance,"Parque Gaia");
+ 	  	)
+  );  
 	  
-	  public testGoThroughHighwayNoTollbooths: () ==> ()
-	  testGoThroughHighwayNoTollbooths() == (
-	  	let vv = Setup(),
-	  		  car = mk_ViaVerde`Car("12345", mk_(<Mercedes>,<Benz>,<a>)),
-	  		  entrykm = 2,
-	  		  exitkm = 200,
-	  		  entryTime = 1500,
-	  		  exitTime = 1630,
-	  		  direction = <Forward>,
-	  		  entrance = true,
-	  		  highway = vv.highways("A1"),
-	  		  cost = 19.8
-	  	in (
-	  		vv.registerCar(car,"101010","0"); -- tested previously
-	  		vv.goThroughHighway(car,entrykm,entryTime,direction,entrance,highway);
-	  		vv.goThroughHighway(car,exitkm,exitTime,direction,not entrance,highway);
-	  		assertEqual(vv.registeredCars(car).records(len vv.registeredCars(car).records).cost, cost); -- da negativo
-	  	)
-	  );
+  public testGoThroughHighwayNoTollbooths: () ==> ()
+  testGoThroughHighwayNoTollbooths() == (
+  	let vv = Setup(),
+  		  entrykm = 2,
+  		  exitkm = 200,
+  		  entryTime = 1500,
+  		  exitTime = 1630,
+  		  direction = <Forward>,
+  		  entrance = true,
+  		  highway = vv.highways("A1")
+  	in (
+  		vv.goThroughHighway(car,entrykm,entryTime,direction,entrance,highway);
+  		vv.goThroughHighway(car,exitkm,exitTime,direction,not entrance,highway);
+  	)
+  );
 
 end TestViaVerde
 
