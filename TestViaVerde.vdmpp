@@ -59,6 +59,25 @@ operations
 	  	)
 	  );
 	  
+	public testGoThroughHighwayUnregistered: () ==> ()
+	  testGoThroughHighwayUnregistered() == (
+	  	let vv = Setup(),
+	  			unRegCar =  mk_ViaVerde`Car("34567", mk_(<KIA>,<Leo>,<a>)),
+	  		  entrykm = 5,
+	  		  exitkm = 105,
+	  		  entryTime = 1500,
+	  		  exitTime = 1630,
+	  		  direction = <Forward>,
+	  		  entrance = true,
+	  		  highway = vv.highways("A1"),
+	  		  cost = (exitkm - entrykm) * highway.costPerClass(car.brandModel.#3)
+	  	in (
+	  		vv.goThroughHighway(unRegCar,entrykm,entryTime,direction,entrance,highway);
+	  		vv.goThroughHighway(unRegCar,exitkm,exitTime,direction,not entrance,highway);
+	  		assertEqual(vv.unRegisteredCarsRecords(unRegCar)(len vv.unRegisteredCarsRecords(unRegCar)).cost, cost);
+	  	)
+	  );
+	  
 	public testGoThroughPark: () ==> ()
 	  testGoThroughPark() == (
 	  	let vv = Setup(),
@@ -123,6 +142,7 @@ operations
   	testRegisterCar();
   	testUnregisterCar();
   	testGoThroughHighway();
+  	--testGoThroughHighwayUnregistered();
   	testGoThroughPark();
   	testGoThroughOneTime();
   	testRetrieveVehicleLocation();
