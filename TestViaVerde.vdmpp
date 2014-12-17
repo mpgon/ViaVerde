@@ -44,7 +44,6 @@ operations
 	public testGoThroughHighway: () ==> ()
 	  testGoThroughHighway() == (
 	  	let vv = Setup(),
-	  		  car = mk_ViaVerde`Car("12345", mk_(<Mercedes>,<Benz>,<a>)),
 	  		  entrykm = 5,
 	  		  exitkm = 105,
 	  		  entryTime = 1500,
@@ -54,7 +53,6 @@ operations
 	  		  highway = vv.highways("A1"),
 	  		  cost = (exitkm - entrykm) * highway.costPerClass(car.brandModel.#3)
 	  	in (
-	  		vv.registerCar(car,"101010","0"); -- tested previously
 	  		vv.goThroughHighway(car,entrykm,entryTime,direction,entrance,highway);
 	  		vv.goThroughHighway(car,exitkm,exitTime,direction,not entrance,highway);
 	  		assertEqual(vv.registeredCars(car).records(len vv.registeredCars(car).records).cost, cost);
@@ -75,38 +73,47 @@ operations
 	  	)
 	  );
 	  
-	  public testGoThroughOneTime: () ==> ()
-	  testGoThroughOneTime() == (
-	  	let vv = Setup(),
-	  		  time = 1933,
-					type = <SCUT>,
-	  		  cost = 2.5,
-	  		  record = mk_ViaVerde`OneTimeRecord(type, time) 
-	  	in (
-	  		vv.goThroughOneTime(car,cost,type,time);
-	  		assertEqual(vv.registeredCars(car).records(len vv.registeredCars(car).records).record, record);
-	  	)
-	  );
-	  
-	  public testSetCreditCard: () ==> ()
-	  testSetCreditCard() == (
-	  	let vv = Setup(),
-	  		  creditCard = "5555" 
-	  	in (
-	  		vv.setCreditCard(car,creditCard);
-	  		assertEqual(vv.registeredCars(car).creditCard, creditCard);
-	  	)
-	  );
-	  
-	  public testAddToRecords: () ==> ()
-	  testAddToRecords() == (
-	  	let vv = Setup(),
-	  		record = mk_ViaVerde`ViaVerdeRecord(mk_ViaVerde`OneTimeRecord(<GasStation>, 1000), 20)
-	  	in (
-	  		vv.addToRecords(car,record);
-	  		assertEqual(vv.registeredCars(car).records, [record]);
-	  	)
-	  );
+  public testGoThroughOneTime: () ==> ()
+  testGoThroughOneTime() == (
+  	let vv = Setup(),
+  		  time = 1933,
+				type = <SCUT>,
+  		  cost = 2.5,
+  		  record = mk_ViaVerde`OneTimeRecord(type, time) 
+  	in (
+  		vv.goThroughOneTime(car,cost,type,time);
+  		assertEqual(vv.registeredCars(car).records(len vv.registeredCars(car).records).record, record);
+  	)
+  );
+  
+  public testSetCreditCard: () ==> ()
+  testSetCreditCard() == (
+  	let vv = Setup(),
+  		  creditCard = "5555" 
+  	in (
+  		vv.setCreditCard(car,creditCard);
+  		assertEqual(vv.registeredCars(car).creditCard, creditCard);
+  	)
+  );
+  
+  public testAddToRecords: () ==> ()
+  testAddToRecords() == (
+  	let vv = Setup(),
+  		record = mk_ViaVerde`ViaVerdeRecord(mk_ViaVerde`OneTimeRecord(<GasStation>, 1000), 20)
+  	in (
+  		vv.addToRecords(car,record);
+  		assertEqual(vv.registeredCars(car).records, [record]);
+  	)
+  );
+  
+  public testRetrieveVehicleLocation: () ==> ()
+  testRetrieveVehicleLocation() == (
+  	let vv = Setup()
+  	in (
+  		vv.goThroughPark(car,1000,true,"Parque Gaia");
+  		assertEqual(vv.retrieveVehicleLocation(car.licensePlate), "Parque Gaia");
+  	)
+  );
 
 	-- Entry point that runs all tests with valid inputs
   public testAll: () ==> ()
@@ -118,6 +125,7 @@ operations
   	testGoThroughHighway();
   	testGoThroughPark();
   	testGoThroughOneTime();
+  	testRetrieveVehicleLocation();
   );
   
   -- Tests with invalid inputs
@@ -171,5 +179,3 @@ operations
   );
 
 end TestViaVerde
-
---test retrieveVehicleLocation
