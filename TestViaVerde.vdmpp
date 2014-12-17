@@ -1,6 +1,7 @@
 class TestViaVerde is subclass of MyTestCase
 	
 operations
+	-- Setup a default environment for the ViaVerde system
 	public Setup : () ==> ViaVerde
 		Setup () == (
 			dcl vv : ViaVerde := new ViaVerde();
@@ -13,6 +14,8 @@ operations
 			return vv;
 		);
 		
+	-- Tests with valid inputs	
+		
 	public testRegisterCar: () ==> ()
 	  testRegisterCar() == (
 	  	let vv = Setup(),
@@ -21,10 +24,33 @@ operations
 	  		  registeredCars = {car |-> vvDevice}
 	  	in (
 	  		vv.registerCar(car,"101010","0");
-	  	  assertEqual(vv.registeredCars,  registeredCars)
+	  	  assertEqual(vv.registeredCars,  registeredCars);
+	  	)
+	  );
+	  
+	public testUnregisterCar: () ==> ()
+	  testUnregisterCar() == (
+	  	let vv = Setup(),
+	  		  car = mk_ViaVerde`Car("12345", mk_(<Mercedes>,<Benz>,<a>)),
+	  		  vvDevice = mk_ViaVerde`ViaVerdeDevice("0","101010",[]),
+	  		  unregisteredCars = {car |-> {vvDevice}}
+	  		  
+	  	in (
+	  		vv.registerCar(car,"101010","0"); -- tested previously
+	  		vv.unregisterCar(car); -- erro aqui, vejam o que se passa
+	  	  assertEqual(vv.registeredCars,  {});
+	  	  assertEqual(vv.unRegisteredCarsRecords,  unregisteredCars);
 	  	)
 	  );
 
+	-- Entry point that runs all tests with valid inputs
+  public testAll: () ==> ()
+  testAll() == (
+  	testRegisterCar();
+  	testUnregisterCar();
+  );
+  
+  -- Tests with invalid inputs
 
 end TestViaVerde
 
