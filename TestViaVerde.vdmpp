@@ -1,4 +1,7 @@
 class TestViaVerde is subclass of MyTestCase
+
+values
+	car: ViaVerde`Car = mk_ViaVerde`Car("12345", mk_(<Mercedes>,<Benz>,<a>));
 	
 operations
 	-- Setup a default environment for the ViaVerde system
@@ -10,7 +13,8 @@ operations
 					mk_ViaVerde`Highway({<a> |-> 0.1, <b> |-> 0.2, <c> |-> 0.3, <d> |-> 0.4},
 					{mk_ViaVerde`Tollbooth(5,<Forward>) |-> 0.4, mk_ViaVerde`Tollbooth(105,<Forward>) |-> 2.5},
 						"A1")},
-				vv.parks := {"Parque Gaia" |-> 0.5});			
+				vv.parks := {"Parque Gaia" |-> 0.5},
+				vv.registeredCars := {car |-> mk_ViaVerde`ViaVerdeDevice("0","101010",[])});			
 			return vv;
 		);
 		
@@ -19,21 +23,18 @@ operations
 	public testRegisterCar: () ==> ()
 	  testRegisterCar() == (
 	  	let vv = Setup(),
-	  		  car = mk_ViaVerde`Car("12345", mk_(<Mercedes>,<Benz>,<a>)),
-	  		  vvDevice = mk_ViaVerde`ViaVerdeDevice("0","101010",[]),
-	  		  registeredCars = {car |-> vvDevice}
+	  		  newCar = mk_ViaVerde`Car("23456", mk_(<Audi>,<A4>,<a>)),
+	  		  vvDevice = mk_ViaVerde`ViaVerdeDevice("1","202020",[])
 	  	in (
-	  		vv.registerCar(car,"101010","0");
-	  	  assertEqual(vv.registeredCars,  registeredCars);
+	  		vv.registerCar(newCar,"202020","1");
+	  	  assertEqual(vv.registeredCars(newCar),  vvDevice);
 	  	)
 	  );
 	  
 	public testUnregisterCar: () ==> ()
 	  testUnregisterCar() == (
-	  	let vv = Setup(),
-	  		  car = mk_ViaVerde`Car("12345", mk_(<Mercedes>,<Benz>,<a>))	  
+	  	let vv = Setup()	  
 	  	in (
-	  		vv.registerCar(car,"101010","0"); -- tested previously
 	  		vv.unregisterCar(car); 
 	  	  assertEqual(vv.registeredCars,  {|->});
 	  	  assertEqual(vv.unRegisteredCarsRecords,  {car |-> []});
@@ -43,7 +44,6 @@ operations
 	public testGoThroughHighway: () ==> ()
 	  testGoThroughHighway() == (
 	  	let vv = Setup(),
-	  		  car = mk_ViaVerde`Car("12345", mk_(<Mercedes>,<Benz>,<a>)),
 	  		  entrykm = 2,
 	  		  exitkm = 200,
 	  		  entryTime = 1500,
@@ -53,7 +53,6 @@ operations
 	  		  highway = vv.highways("A1"),
 	  		  cost = 19.8
 	  	in (
-	  		vv.registerCar(car,"101010","0"); -- tested previously
 	  		vv.goThroughHighway(car,entrykm,entryTime,direction,entrance,highway);
 	  		vv.goThroughHighway(car,exitkm,exitTime,direction,not entrance,highway);
 	  		assertEqual(vv.registeredCars(car).records(len vv.registeredCars(car).records).cost, cost);
@@ -63,13 +62,11 @@ operations
 	public testGoThroughPark: () ==> ()
 	  testGoThroughPark() == (
 	  	let vv = Setup(),
-	  		  car = mk_ViaVerde`Car("12345", mk_(<Mercedes>,<Benz>,<a>)),
 	  		  entryTime = 1933,
 	  		  exitTime = 2000,
 	  		  entrance = true,
 	  		  cost = (exitTime - entryTime) * vv.parks("Parque Gaia")
 	  	in (
-	  		vv.registerCar(car,"101010","0"); -- tested previously
 	  		vv.goThroughPark(car,entryTime,entrance,"Parque Gaia");
 	  		vv.goThroughPark(car,exitTime,not entrance,"Parque Gaia");
 	  		assertEqual(vv.registeredCars(car).records(len vv.registeredCars(car).records).cost, cost);
@@ -79,13 +76,11 @@ operations
 	  public testGoThroughOneTime: () ==> ()
 	  testGoThroughOneTime() == (
 	  	let vv = Setup(),
-	  		  car = mk_ViaVerde`Car("12345", mk_(<Mercedes>,<Benz>,<a>)),
 	  		  time = 1933,
 					type = <SCUT>,
 	  		  cost = 2.5,
 	  		  record = mk_ViaVerde`OneTimeRecord(type, time) 
 	  	in (
-	  		vv.registerCar(car,"101010","0"); -- tested previously
 	  		vv.goThroughOneTime(car,cost,type,time);
 	  		assertEqual(vv.registeredCars(car).records(len vv.registeredCars(car).records).record, record);
 	  	)
