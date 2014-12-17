@@ -56,7 +56,7 @@ operations
 	  		vv.registerCar(car,"101010","0"); -- tested previously
 	  		vv.goThroughHighway(car,entrykm,entryTime,direction,entrance,highway);
 	  		vv.goThroughHighway(car,exitkm,exitTime,direction,not entrance,highway);
-	  		assertEqual(vv.registeredCars(car).records(len vv.registeredCars(car).records).cost, cost); -- da negativo
+	  		assertEqual(vv.registeredCars(car).records(len vv.registeredCars(car).records).cost, cost);
 	  	)
 	  );
 	  
@@ -67,12 +67,27 @@ operations
 	  		  entryTime = 1933,
 	  		  exitTime = 2000,
 	  		  entrance = true,
-	  		  cost = 19.8
+	  		  cost = (exitTime - entryTime) * vv.parks("Parque Gaia")
 	  	in (
 	  		vv.registerCar(car,"101010","0"); -- tested previously
 	  		vv.goThroughPark(car,entryTime,entrance,"Parque Gaia");
 	  		vv.goThroughPark(car,exitTime,not entrance,"Parque Gaia");
-	  		assertEqual(vv.registeredCars(car).records(len vv.registeredCars(car).records).cost, cost); -- ?
+	  		assertEqual(vv.registeredCars(car).records(len vv.registeredCars(car).records).cost, cost);
+	  	)
+	  );
+	  
+	  public testGoThroughOneTime: () ==> ()
+	  testGoThroughOneTime() == (
+	  	let vv = Setup(),
+	  		  car = mk_ViaVerde`Car("12345", mk_(<Mercedes>,<Benz>,<a>)),
+	  		  time = 1933,
+					type = <SCUT>,
+	  		  cost = 2.5,
+	  		  record = mk_ViaVerde`OneTimeRecord(type, time) 
+	  	in (
+	  		vv.registerCar(car,"101010","0"); -- tested previously
+	  		vv.goThroughOneTime(car,cost,type,time);
+	  		assertEqual(vv.registeredCars(car).records(len vv.registeredCars(car).records).record, record);
 	  	)
 	  );
 
@@ -83,6 +98,7 @@ operations
   	testUnregisterCar();
   	testGoThroughHighway();
   	testGoThroughPark();
+  	testGoThroughOneTime();
   );
   
   -- Tests with invalid inputs
