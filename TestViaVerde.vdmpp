@@ -11,7 +11,7 @@ operations
 			||(
 				vv.highways := {"A1" |-> 
 					mk_ViaVerde`Highway({<a> |-> 0.1, <b> |-> 0.2, <c> |-> 0.3, <d> |-> 0.4},
-					{mk_ViaVerde`Tollbooth(5,<Forward>) |-> 0.4, mk_ViaVerde`Tollbooth(105,<Forward>) |-> 2.5},
+					{mk_ViaVerde`Tollbooth(5,<Forward>), mk_ViaVerde`Tollbooth(105,<Forward>)},
 						"A1")},
 				vv.parks := {"Parque Gaia" |-> 0.5},
 				vv.registeredCars := {car |-> mk_ViaVerde`ViaVerdeDevice("0","101010",[])});			
