@@ -41,6 +41,17 @@ operations
 	  	)
 	  );
 	  
+	public testRegisterUnregisteredCar: () ==> ()
+	  testRegisterUnregisteredCar() == (
+	  	let vv = Setup(),
+	  		vvDevice = mk_ViaVerde`ViaVerdeDevice("1","202020",[])
+	  	in (
+	  		vv.unregisterCar(car); 
+	  		vv.registerCar(car,"202020","1");
+	  	  assertEqual(vv.registeredCars(car),  vvDevice);
+	  	)
+	  );
+	  
 	public testGoThroughHighway: () ==> ()
 	  testGoThroughHighway() == (
 	  	let vv = Setup(),
@@ -92,6 +103,21 @@ operations
 	  	)
 	  );
 	  
+	public testGoThroughParkUnregistered: () ==> ()
+	  testGoThroughParkUnregistered() == (
+	  	let vv = Setup(),
+	  			unRegCar =  mk_ViaVerde`Car("34567", mk_(<KIA>,<Leo>,<a>)),
+	  		  entryTime = 1933,
+	  		  exitTime = 2000,
+	  		  entrance = true,
+	  		  cost = (exitTime - entryTime) * vv.parks("Parque Gaia")
+	  	in (
+	  		vv.goThroughPark(unRegCar,entryTime,entrance,"Parque Gaia");
+	  		vv.goThroughPark(unRegCar,exitTime,not entrance,"Parque Gaia");
+	  		assertEqual(vv.unRegisteredCarsRecords(unRegCar)(len vv.unRegisteredCarsRecords(unRegCar)).cost, cost);
+	  	)
+	  );
+	  
   public testGoThroughOneTime: () ==> ()
   testGoThroughOneTime() == (
   	let vv = Setup(),
@@ -125,12 +151,21 @@ operations
   	)
   );
   
-  public testRetrieveVehicleLocation: () ==> ()
-  testRetrieveVehicleLocation() == (
+  public testRetrieveVehicleLocationPark: () ==> ()
+  testRetrieveVehicleLocationPark() == (
   	let vv = Setup()
   	in (
   		vv.goThroughPark(car,1000,true,"Parque Gaia");
   		assertEqual(vv.retrieveVehicleLocation(car.licensePlate), "Parque Gaia");
+  	)
+  );
+  
+  public testRetrieveVehicleLocationHighway: () ==> ()
+  testRetrieveVehicleLocationHighway() == (
+  	let vv = Setup()
+  	in (
+  		vv.goThroughHighway(car,1,1800,<Backward>,true,vv.highways("A1"));
+  		assertEqual(vv.retrieveVehicleLocation(car.licensePlate), "A1");
   	)
   );
 
@@ -141,11 +176,14 @@ operations
   	testAddToRecords();
   	testRegisterCar();
   	testUnregisterCar();
+  	testRegisterUnregisteredCar();
   	testGoThroughHighway();
-  	--testGoThroughHighwayUnregistered();
+  	testGoThroughHighwayUnregistered();
   	testGoThroughPark();
+  	testGoThroughParkUnregistered();
   	testGoThroughOneTime();
-  	testRetrieveVehicleLocation();
+  	testRetrieveVehicleLocationPark();
+  	testRetrieveVehicleLocationHighway();
   );
   
   -- Tests with invalid inputs
