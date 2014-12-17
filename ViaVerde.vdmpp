@@ -94,8 +94,11 @@ class ViaVerde
     inv not exists h in set rng highways & dom h.costPerClass	inter {<a>, <b>, <c>, <d>} <> {<a>, <b>, <c>, <d>};
         
     --A car can't be in more then a place at a time (being it a park, an highway, or a mix)
-    inv forall device in set rng unRegisteredCarsRecords union rng registeredCars &
-				noTwoRecordsWithExitZero(device.records, false);
+    inv forall vv_records in set rng unRegisteredCarsRecords &
+						noTwoRecordsWithExitZero(vv_records, false);
+								
+		inv forall device in set rng registeredCars &
+						noTwoRecordsWithExitZero(device.records, false);					
   							
   operations
     public ViaVerde: () ==> ViaVerde
