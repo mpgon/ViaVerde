@@ -1,10 +1,10 @@
-/*class MyTestCase
+class MyTestCase
 /*
   Superclass for test classes, simpler but more practical than VDMUnit`TestCase. 
   For proper use, you have to do: New -> Add VDM Library -> IO.
   JPF, FEUP, MFES, 2014/15.
 */
-/*
+
 operations
 
 	-- Simulates assertion checking by reducing it to pre-condition checking.
@@ -29,4 +29,3 @@ operations
 	post expected = actual
   
 end MyTestCase
-*/

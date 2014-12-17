@@ -1,0 +1,44 @@
+class TestViaVerde is subclass of MyTestCase
+	
+operations
+	public Setup : () ==> ViaVerde
+		Setup () == (
+			dcl vv : ViaVerde := new ViaVerde();
+			||(
+				vv.highways := {"A1" |-> 
+					mk_ViaVerde`Highway({<a> |-> 1, <b> |-> 1.5, <c> |-> 1.6, <d> |-> 1.9},
+					{mk_ViaVerde`Tollbooth(5,<Forward>) |-> 0.4, mk_ViaVerde`Tollbooth(105,<Forward>) |-> 2.5},
+						"A1")},
+				vv.parks := {"Parque Gaia" |-> 0.5});			
+			return vv;
+		);
+		
+	public testRegisterCar: () ==> ()
+	  testRegisterCar() == (
+	  	let vv = Setup(),
+	  		  car = mk_ViaVerde`Car("12345", mk_(<Mercedes>,<Benz>,<a>)),
+	  		  vvDevice = mk_ViaVerde`ViaVerdeDevice("0","101010",[]),
+	  		  registeredCars = {car |-> vvDevice}
+	  	in (
+	  		vv.registerCar(car,"101010","0");
+	  	  assertEqual(vv.registeredCars,  registeredCars)
+	  	)
+	  );
+
+
+end TestViaVerde
+
+
+--test registerCar
+
+--test unregisterCar
+
+--test goThroughHighway
+
+--test goThroughHighway
+
+--test goThroughHighway
+
+--test setCreditCard
+
+--test addToRecords
